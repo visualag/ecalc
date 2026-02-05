@@ -50,7 +50,7 @@ const calculators = [
     id: 'imobiliare',
     title: 'Calculator Randament Imobiliar',
     description: 'Calculează yield-ul investiției imobiliare',
-    icon: Home,
+    icon: HomeIcon,
     href: '/imobiliare',
     color: 'bg-teal-500',
   },
