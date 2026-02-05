@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -16,13 +16,14 @@ export default function EFacturaPage() {
   const [affiliateLink, setAffiliateLink] = useState('#');
   const [affiliateText, setAffiliateText] = useState('Software e-Factura');
 
-  useState(() => {
+  useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         setAffiliateLink(data.affiliate_efactura_link || '#');
         setAffiliateText(data.affiliate_efactura_text || 'Software e-Factura');
-      });
+      })
+      .catch(err => console.error('Error:', err));
   }, []);
 
   const calculate = () => {
@@ -34,13 +35,11 @@ export default function EFacturaPage() {
       return;
     }
 
-    // Termene raportare: 5 zile pentru emitere, 5 zile pentru înregistrare
     const termenRaportare = 5;
     let amenda = 0;
     let status = 'La timp';
 
     if (zile > termenRaportare) {
-      // Amenă: 500-1000 RON pentru persoane fizice, 1000-5000 pentru persoane juridice
       amenda = 1000 + (zile - termenRaportare) * 50;
       status = 'Întârziere';
     }

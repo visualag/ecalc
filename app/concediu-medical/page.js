@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HeartPulse, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -16,13 +16,14 @@ export default function ConcediuMedicalPage() {
   const [affiliateLink, setAffiliateLink] = useState('#');
   const [affiliateText, setAffiliateText] = useState('Asigurare medicală');
 
-  useState(() => {
+  useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         setAffiliateLink(data.affiliate_concediu_link || '#');
         setAffiliateText(data.affiliate_concediu_text || 'Asigurare medicală');
-      });
+      })
+      .catch(err => console.error('Error:', err));
   }, []);
 
   const calculate = () => {
@@ -34,7 +35,6 @@ export default function ConcediuMedicalPage() {
       return;
     }
 
-    // Formula simplificată OUG 2026: 75% din salariul mediu brut
     const salariuMediuBrut = brut;
     const indemnizatieZilnica = (salariuMediuBrut / 30) * 0.75;
     const totalIndemnizatie = indemnizatieZilnica * nrZile;

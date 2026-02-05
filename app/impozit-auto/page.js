@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Car, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -15,13 +15,14 @@ export default function ImpozitAutoPage() {
   const [affiliateLink, setAffiliateLink] = useState('#');
   const [affiliateText, setAffiliateText] = useState('Asigurare RCA');
 
-  useState(() => {
+  useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         setAffiliateLink(data.affiliate_impozit_link || '#');
         setAffiliateText(data.affiliate_impozit_text || 'Asigurare RCA');
-      });
+      })
+      .catch(err => console.error('Error:', err));
   }, []);
 
   const calculate = () => {
@@ -32,7 +33,6 @@ export default function ImpozitAutoPage() {
       return;
     }
 
-    // Tarife 2026 (simplificat)
     let impozit = 0;
     if (cc <= 1600) {
       impozit = cc * 1.5;

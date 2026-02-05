@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plane, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -16,13 +16,14 @@ export default function ZboruriPage() {
   const [affiliateLink, setAffiliateLink] = useState('#');
   const [affiliateText, setAffiliateText] = useState('Compensații zbor');
 
-  useState(() => {
+  useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         setAffiliateLink(data.affiliate_zboruri_link || '#');
         setAffiliateText(data.affiliate_zboruri_text || 'Compensații zbor');
-      });
+      })
+      .catch(err => console.error('Error:', err));
   }, []);
 
   const calculate = () => {
@@ -34,7 +35,6 @@ export default function ZboruriPage() {
       return;
     }
 
-    // Reglement EU261: compensații în funcție de distanță și întârziere
     let compensatie = 0;
     let eligible = false;
 

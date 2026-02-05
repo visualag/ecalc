@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home as HomeIcon, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -17,13 +17,14 @@ export default function ImobiliarePage() {
   const [affiliateLink, setAffiliateLink] = useState('#');
   const [affiliateText, setAffiliateText] = useState('Credite ipotecare');
 
-  useState(() => {
+  useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         setAffiliateLink(data.affiliate_imobiliare_link || '#');
         setAffiliateText(data.affiliate_imobiliare_text || 'Credite ipotecare');
-      });
+      })
+      .catch(err => console.error('Error:', err));
   }, []);
 
   const calculate = () => {
