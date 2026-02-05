@@ -16,16 +16,28 @@ export default function SalariiPage() {
   const [result, setResult] = useState(null);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadData, setLeadData] = useState({ name: '', email: '', phone: '' });
-  const [affiliateLink, setAffiliateLink] = useState('#');
-  const [affiliateText, setAffiliateText] = useState('Obține card salariu gratuit');
+  
+  // Settings from API
+  const [settings, setSettings] = useState({});
+  const [affiliateSlots, setAffiliateSlots] = useState([]);
 
-  // Fetch affiliate data
+  // Fetch settings and affiliate data
   useEffect(() => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        setAffiliateLink(data.affiliate_salarii_link || '#');
-        setAffiliateText(data.affiliate_salarii_text || 'Obține card salariu gratuit');
+        setSettings(data);
+        // Build affiliate slots array
+        const slots = [];
+        for (let i = 1; i <= 3; i++) {
+          if (data[`affiliate_salarii_link_${i}`] && data[`affiliate_salarii_link_${i}`] !== '#') {
+            slots.push({
+              text: data[`affiliate_salarii_text_${i}`] || `Ofertă ${i}`,
+              link: data[`affiliate_salarii_link_${i}`]
+            });
+          }
+        }
+        setAffiliateSlots(slots);
       })
       .catch(err => console.error('Error fetching settings:', err));
   }, []);
@@ -37,23 +49,27 @@ export default function SalariiPage() {
       return;
     }
 
+    const casRate = (settings.cas_rate || 25) / 100;
+    const cassRate = (settings.cass_rate || 10) / 100;
+    const taxRate = (settings.income_tax_rate || 10) / 100;
+    const deduction = settings.deduction_personal || 510;
+
     let brut, net, cas, cass, impozit;
 
     if (salaryType === 'brut') {
       brut = amount;
-      cas = brut * 0.25;
-      cass = brut * 0.10;
+      cas = brut * casRate;
+      cass = brut * cassRate;
       const bazaImpozit = brut - cas - cass;
-      impozit = Math.max(0, (bazaImpozit - 510) * 0.10);
+      impozit = Math.max(0, (bazaImpozit - deduction) * taxRate);
       net = brut - cas - cass - impozit;
     } else {
       net = amount;
-      // Formula inversă (aproximativă)
-      brut = net / (1 - 0.25 - 0.10 - 0.08);
-      cas = brut * 0.25;
-      cass = brut * 0.10;
+      brut = net / (1 - casRate - cassRate - 0.08);
+      cas = brut * casRate;
+      cass = brut * cassRate;
       const bazaImpozit = brut - cas - cass;
-      impozit = Math.max(0, (bazaImpozit - 510) * 0.10);
+      impozit = Math.max(0, (bazaImpozit - deduction) * taxRate);
     }
 
     setResult({
@@ -62,6 +78,9 @@ export default function SalariiPage() {
       cas: cas.toFixed(2),
       cass: cass.toFixed(2),
       impozit: impozit.toFixed(2),
+      casRate: settings.cas_rate || 25,
+      cassRate: settings.cass_rate || 10,
+      taxRate: settings.income_tax_rate || 10,
     });
 
     setShowLeadForm(true);
@@ -158,6 +177,11 @@ export default function SalariiPage() {
                   <CardTitle>Rezultate</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {/* Above Results Ad */}
+                  {settings.ad_above_results && (
+                    <div className="mb-4" dangerouslySetInnerHTML={{ __html: settings.ad_above_results }} />
+                  )}
+
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Salariu Brut:</span>
                     <span className="text-xl font-bold">{result.brut} RON</span>
@@ -168,26 +192,39 @@ export default function SalariiPage() {
                   </div>
                   <div className="border-t pt-3 space-y-2">
                     <div className="flex justify-between">
-                      <span>CAS (25%):</span>
+                      <span>CAS ({result.casRate}%):</span>
                       <span>{result.cas} RON</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>CASS (10%):</span>
+                      <span>CASS ({result.cassRate}%):</span>
                       <span>{result.cass} RON</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Impozit (10%):</span>
+                      <span>Impozit ({result.taxRate}%):</span>
                       <span>{result.impozit} RON</span>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t">
-                    <a href={affiliateLink} target="_blank" rel="noopener noreferrer">
-                      <Button className="w-full bg-green-600 hover:bg-green-700" size="lg">
-                        {affiliateText}
-                      </Button>
-                    </a>
-                  </div>
+                  {/* Below Results Ad */}
+                  {settings.ad_below_results && (
+                    <div className="mt-4" dangerouslySetInnerHTML={{ __html: settings.ad_below_results }} />
+                  )}
+
+                  {/* 3 Affiliate Slots */}
+                  {affiliateSlots.length > 0 && (
+                    <div className="pt-4 border-t space-y-2">
+                      {affiliateSlots.map((slot, idx) => (
+                        <a key={idx} href={slot.link} target="_blank" rel="noopener noreferrer">
+                          <Button 
+                            className={`w-full ${idx === 0 ? 'bg-green-600 hover:bg-green-700' : idx === 1 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700'}`} 
+                            size="lg"
+                          >
+                            {slot.text}
+                          </Button>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -240,11 +277,11 @@ export default function SalariiPage() {
       </Dialog>
 
       {/* Sticky Mobile CTA */}
-      {result && (
+      {result && affiliateSlots.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 md:hidden z-50">
-          <a href={affiliateLink} target="_blank" rel="noopener noreferrer">
+          <a href={affiliateSlots[0].link} target="_blank" rel="noopener noreferrer">
             <Button className="w-full bg-green-600 hover:bg-green-700" size="lg">
-              {affiliateText}
+              {affiliateSlots[0].text}
             </Button>
           </a>
         </div>
