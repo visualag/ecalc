@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { TrendingUp, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { TrendingUp, AlertCircle, CheckCircle, Info, Target, ArrowRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { SalaryCalculator } from '@/lib/salary-calculator';
+import { BreakEvenCalculator } from '@/lib/break-even-calculator';
 
 export default function DecisionMakerPage() {
   const params = useParams();
@@ -17,11 +19,13 @@ export default function DecisionMakerPage() {
   const [fiscalRules, setFiscalRules] = useState(null);
   const [fiscalRules2025, setFiscalRules2025] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('comparison');
   
   const [annualIncome, setAnnualIncome] = useState('');
   const [expenses, setExpenses] = useState('');
   const [results, setResults] = useState(null);
   const [comparison2025, setComparison2025] = useState(null);
+  const [breakEvenData, setBreakEvenData] = useState(null);
 
   useEffect(() => {
     loadFiscalRules();
