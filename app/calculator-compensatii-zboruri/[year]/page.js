@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { FlightCompensationCalculator, AIRPORTS_DATABASE } from '@/lib/flight-compensation-calculator';
+import Header from '@/components/Header';
 
 export default function FlightCompensationPage() {
   const params = useParams();
@@ -86,6 +87,7 @@ export default function FlightCompensationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
           {/* Header */}

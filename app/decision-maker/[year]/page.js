@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { SalaryCalculator } from '@/lib/salary-calculator';
 import { BreakEvenCalculator } from '@/lib/break-even-calculator';
+import Header from '@/components/Header';
 
 export default function DecisionMakerPage() {
   const params = useParams();

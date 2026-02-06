@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { EFacturaCalculator } from '@/lib/efactura-calculator';
 import { HolidaysCalculator } from '@/lib/holidays-calculator';
+import Header from '@/components/Header';
 
 export default function EFacturaPage() {
   const params = useParams();
@@ -76,6 +77,7 @@ export default function EFacturaPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
