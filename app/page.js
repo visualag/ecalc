@@ -47,7 +47,7 @@ const professionalCalculators = [
   {
     id: 'impozit-auto',
     title: 'Impozit Auto',
-    description: 'Capacitate motor • Tip vehicul • Coeficient regional • TCO',
+    description: 'Capacitate motor • Tip vehicul • Orașe România • Coeficienți',
     icon: Car,
     href: `/calculator-impozit-auto/${currentYear}`,
     color: 'bg-amber-600',
@@ -62,12 +62,22 @@ const professionalCalculators = [
     badge: 'PRO',
   },
   {
-    id: 'drepturi',
-    title: 'Calculator Drepturi',
-    description: 'e-Factura termene & amenzi • Compensații zboruri EU261',
-    icon: Scale,
-    href: `/calculator-drepturi/${currentYear}`,
+    id: 'efactura',
+    title: 'Calculator e-Factura',
+    description: 'Termene transmitere • Obligativitate B2B/B2C • Zile lucrătoare',
+    icon: FileText,
+    href: `/calculator-efactura/${currentYear}`,
     color: 'bg-violet-600',
+    badge: 'NOU',
+  },
+  {
+    id: 'compensatii-zboruri',
+    title: 'Compensații Zboruri',
+    description: 'EU Regulation 261/2004 • Calculează despăgubiri întârzieri/anulări',
+    icon: Plane,
+    href: `/calculator-compensatii-zboruri/${currentYear}`,
+    color: 'bg-sky-600',
+    badge: 'NOU',
   },
 ];
 
