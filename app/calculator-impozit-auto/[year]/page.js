@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Car, Calculator, MapPin, Fuel, Shield, Settings, Info, Download, Share2, TrendingDown, Zap } from 'lucide-react';
+import { Car, Calculator, MapPin, Fuel, Shield, Settings, Info, Download, Share2, TrendingDown, Zap, RotateCcw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { CarTaxCalculator, VEHICLE_TYPES, LOCATION_COEFFICIENTS } from '@/lib/car-tax-calculator';
+import NavigationHeader from '@/components/NavigationHeader';
 
 export default function CarTaxCalculatorPage() {
   const params = useParams();
