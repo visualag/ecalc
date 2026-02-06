@@ -323,6 +323,19 @@ export default function CarTaxCalculatorPage() {
                       />
                     </div>
 
+                    <div>
+                      <Label>Preț Achiziție (RON, opțional)</Label>
+                      <Input
+                        type="number"
+                        value={purchasePrice}
+                        onChange={(e) => setPurchasePrice(e.target.value)}
+                        placeholder="Pentru mașini de lux (>375.000 RON)"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Suprataxă 0.9% pentru valori peste 375.000 RON
+                      </p>
+                    </div>
+
                     <Button onClick={calculateTax} className="w-full bg-amber-600 hover:bg-amber-700" size="lg">
                       <Calculator className="h-4 w-4 mr-2" />
                       Calculează Impozit
