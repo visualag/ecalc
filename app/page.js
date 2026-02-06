@@ -232,10 +232,46 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-slate-800">
-        <div className="container mx-auto text-center text-slate-500 text-sm">
-          <p>© {currentYear} eCalc.ro - Calculatoare Fiscale Profesionale pentru România</p>
-          <p className="mt-2">Informațiile au caracter orientativ. Consultați un specialist pentru situații complexe.</p>
+      <footer className="py-12 px-4 border-t border-slate-800 bg-slate-950">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            <div>
+              <h3 className="text-white font-semibold mb-4">eCalc.ro</h3>
+              <p className="text-slate-400 text-sm">
+                Calculatoare fiscale profesionale pentru România. 
+                Toate calculele sunt orientative și nu înlocuiesc consultanța fiscală.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-4">Legal</h3>
+              <div className="space-y-2">
+                <Link href="/termeni-conditii" className="block text-slate-400 hover:text-white text-sm">
+                  Termeni și Condiții
+                </Link>
+                <Link href="/politica-confidentialitate" className="block text-slate-400 hover:text-white text-sm">
+                  Politica de Confidențialitate
+                </Link>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-white font-semibold mb-4">Surse Oficiale</h3>
+              <div className="space-y-2 text-sm">
+                <a href="https://www.anaf.ro" target="_blank" rel="noopener" className="block text-slate-400 hover:text-white">
+                  ANAF - Agenția Națională de Administrare Fiscală
+                </a>
+                <a href="https://e-factura.anaf.ro" target="_blank" rel="noopener" className="block text-slate-400 hover:text-white">
+                  Portal e-Factura
+                </a>
+                <a href="https://www.legislatie.just.ro" target="_blank" rel="noopener" className="block text-slate-400 hover:text-white">
+                  Legislație România
+                </a>
+              </div>
+            </div>
+          </div>
+          <div className="text-center pt-8 border-t border-slate-800">
+            <p className="text-slate-500 text-sm">© {currentYear} eCalc.ro - Calculatoare Fiscale Profesionale pentru România</p>
+            <p className="text-slate-600 text-xs mt-2">Informațiile au caracter orientativ. Consultați un specialist pentru situații complexe.</p>
+          </div>
         </div>
       </footer>
     </div>
