@@ -15,7 +15,7 @@ import { getBNRExchangeRate } from '@/lib/salary-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
 import { saveToStorage, loadFromStorage, clearStorage } from '@/components/CalculatorLayout';
-import { printPDF, generatePFAReport } from '@/lib/pdf-export';
+import { generateGenericPDF } from '@/lib/pdf-export';
 
 export default function PFACalculatorPage() {
   const params = useParams();
