@@ -127,19 +127,21 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href={`/calculator-salarii-pro/${currentYear}`}>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
                 Calculator Salarii
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
             <Link href={`/calculator-pfa/${currentYear}`}>
-              <Button size="lg" variant="outline" className="border-slate-600 text-white hover:bg-slate-800">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
                 Calculator PFA
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
             <Link href={`/decision-maker/${currentYear}`}>
-              <Button size="lg" variant="outline" className="border-purple-500 text-purple-400 hover:bg-purple-600/20">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
                 Decision Maker
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
           </div>
