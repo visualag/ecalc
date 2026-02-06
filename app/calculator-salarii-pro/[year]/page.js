@@ -1,0 +1,508 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { Calculator, Download, Share2, Info } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { SalaryCalculator, getBNRExchangeRate } from '@/lib/salary-calculator';
+
+export default function SalaryCalculatorProPage() {
+  const params = useParams();
+  const year = parseInt(params?.year) || 2026;
+  
+  const [fiscalRules, setFiscalRules] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Inputs
+  const [calculationType, setCalculationType] = useState('brut-net');
+  const [inputValue, setInputValue] = useState('');
+  const [sector, setSector] = useState('standard');
+  const [dependents, setDependents] = useState(0);
+  const [children, setChildren] = useState(0);
+  const [mealVouchers, setMealVouchers] = useState(0);
+  const [voucherDays, setVoucherDays] = useState(22);
+  const [isPartTime, setIsPartTime] = useState(false);
+  const [isStudentOrPensioner, setIsStudentOrPensioner] = useState(false);
+  const [currency, setCurrency] = useState('RON');
+  const [exchangeRate, setExchangeRate] = useState(4.98);
+  
+  // Results
+  const [result, setResult] = useState(null);
+  const [comparison2025, setComparison2025] = useState(null);
+
+  useEffect(() => {
+    loadFiscalRules();
+    loadExchangeRate();
+  }, [year]);
+
+  const loadFiscalRules = async () => {
+    try {
+      const response = await fetch(`/api/fiscal-rules/${year}`);
+      const data = await response.json();
+      setFiscalRules(data);
+      setLoading(false);
+    } catch (error) {
+      toast.error('Eroare la încărcarea regulilor fiscale');
+      setLoading(false);
+    }
+  };
+
+  const loadExchangeRate = async () => {
+    const rate = await getBNRExchangeRate('EUR');
+    setExchangeRate(rate);
+  };
+
+  const calculate = () => {
+    if (!fiscalRules || !inputValue || parseFloat(inputValue) <= 0) {
+      toast.error('Introduceți o valoare validă');
+      return;
+    }
+
+    const calculator = new SalaryCalculator(fiscalRules);
+    const value = parseFloat(inputValue);
+    const valueInRON = currency === 'EUR' ? value * exchangeRate : value;
+    
+    const options = {
+      dependents: parseInt(dependents) || 0,
+      children: parseInt(children) || 0,
+      mealVouchers: parseFloat(mealVouchers) || 0,
+      voucherDays: parseInt(voucherDays) || 22,
+      isStudentOrPensioner,
+    };
+
+    let calcResult;
+
+    if (calculationType === 'brut-net') {
+      if (isPartTime) {
+        calcResult = calculator.calculatePartTime(valueInRON, options);
+      } else {
+        switch(sector) {
+          case 'it':
+            calcResult = calculator.calculateIT(valueInRON, options);
+            break;
+          case 'construction':
+          case 'agriculture':
+            calcResult = calculator.calculateConstruction(valueInRON, options);
+            break;
+          default:
+            calcResult = calculator.calculateStandard(valueInRON, options);
+        }
+      }
+    } else if (calculationType === 'net-brut') {
+      calcResult = calculator.calculateNetToGross(valueInRON, sector, options);
+    } else {
+      calcResult = calculator.calculateCostToNet(valueInRON, sector, options);
+    }
+
+    setResult(calcResult);
+    
+    // Load 2025 for comparison
+    if (year === 2026) {
+      load2025Comparison(valueInRON, options);
+    }
+  };
+
+  const load2025Comparison = async (valueInRON, options) => {
+    try {
+      const response = await fetch('/api/fiscal-rules/2025');
+      const data2025 = await response.json();
+      const calculator2025 = new SalaryCalculator(data2025);
+      
+      let result2025;
+      switch(sector) {
+        case 'it':
+          result2025 = calculator2025.calculateIT(valueInRON, options);
+          break;
+        case 'construction':
+        case 'agriculture':
+          result2025 = calculator2025.calculateConstruction(valueInRON, options);
+          break;
+        default:
+          result2025 = calculator2025.calculateStandard(valueInRON, options);
+      }
+      
+      setComparison2025(result2025);
+    } catch (error) {
+      console.error('Error loading 2025 comparison:', error);
+    }
+  };
+
+  const shareCalculation = () => {
+    const params = new URLSearchParams({
+      type: calculationType,
+      value: inputValue,
+      sector,
+      dependents,
+      children,
+      vouchers: mealVouchers,
+      days: voucherDays,
+      currency,
+    });
+    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copiat în clipboard!');
+  };
+
+  const downloadPDF = () => {
+    toast.info('Export PDF în dezvoltare...');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <Calculator className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-slate-600">Se încarcă regulile fiscale {year}...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {year}</h1>
+              <p className="text-sm text-slate-600">Toate facilitățile fiscale • Calcul în 3 direcții</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={shareCalculation}>
+                <Share2 className="h-4 w-4 mr-1" />
+                Distribuie
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadPDF}>
+                <Download className="h-4 w-4 mr-1" />
+                PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Input Panel */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurare Calcul</CardTitle>
+                <CardDescription>Selectați tipul de calcul și introduceți datele</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Tip Calcul</Label>
+                  <Select value={calculationType} onValueChange={setCalculationType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="brut-net">Brut → Net</SelectItem>
+                      <SelectItem value="net-brut">Net → Brut</SelectItem>
+                      <SelectItem value="cost-net">Cost Total → Net</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Sector</Label>
+                  <Select value={sector} onValueChange={setSector}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="it">IT (Scutire până la 10.000 RON)</SelectItem>
+                      <SelectItem value="construction">Construcții (CAS 21.25%)</SelectItem>
+                      <SelectItem value="agriculture">Agricultură</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Valoare</Label>
+                    <Input
+                      type="number"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <Label>Monedă</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RON">RON</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {currency === 'EUR' && (
+                  <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                    Curs BNR: 1 EUR = {exchangeRate.toFixed(4)} RON
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Persoane întreținere</Label>
+                    <Input
+                      type="number"
+                      value={dependents}
+                      onChange={(e) => setDependents(e.target.value)}
+                      min="0"
+                    />
+                  </div>
+                  <div>
+                    <Label>Copii sub 18 ani</Label>
+                    <Input
+                      type="number"
+                      value={children}
+                      onChange={(e) => setChildren(e.target.value)}
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Tichet masă (RON)</Label>
+                    <Input
+                      type="number"
+                      value={mealVouchers}
+                      onChange={(e) => setMealVouchers(e.target.value)}
+                      min="0"
+                      max={fiscalRules?.salary?.meal_voucher_max || 40}
+                    />
+                  </div>
+                  <div>
+                    <Label>Zile lucrate/lună</Label>
+                    <Input
+                      type="number"
+                      value={voucherDays}
+                      onChange={(e) => setVoucherDays(e.target.value)}
+                      min="0"
+                      max="31"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="parttime"
+                      checked={isPartTime}
+                      onChange={(e) => setIsPartTime(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="parttime" className="text-sm">Part-time (sub salariu minim)</Label>
+                  </div>
+                  {isPartTime && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="student"
+                        checked={isStudentOrPensioner}
+                        onChange={(e) => setIsStudentOrPensioner(e.target.checked)}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="student" className="text-sm">Elev/Student/Pensionar</Label>
+                    </div>
+                  )}
+                </div>
+
+                <Button onClick={calculate} className="w-full" size="lg">
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Calculează
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Results Panel */}
+          <div className="lg:col-span-2">
+            {result ? (
+              <div className="space-y-6">
+                {/* Main Results */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Rezultate {year}</CardTitle>
+                    <CardDescription>
+                      {sector === 'it' && 'Sector IT - Scutire impozit până la 10.000 RON'}
+                      {sector === 'construction' && 'Sector Construcții - CAS redus 21.25%'}
+                      {sector === 'agriculture' && 'Sector Agricultură - Facilități fiscale'}
+                      {sector === 'standard' && 'Calcul standard conform Cod Fiscal'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Employee Side */}
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-lg border-b pb-2">Ce primește Angajatul</h3>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">Salariu Brut:</span>
+                            <span className="font-bold">{result.gross.toFixed(2)} RON</span>
+                          </div>
+                          <div className="flex justify-between text-red-600">
+                            <span>- CAS ({fiscalRules?.salary?.cas_rate || 25}%):</span>
+                            <span>-{result.cas.toFixed(2)} RON</span>
+                          </div>
+                          <div className="flex justify-between text-red-600">
+                            <span>- CASS ({fiscalRules?.salary?.cass_rate || 10}%):</span>
+                            <span>-{result.cass.toFixed(2)} RON</span>
+                          </div>
+                          {result.personalDeduction > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>Deducere personală:</span>
+                              <span>{result.personalDeduction.toFixed(2)} RON</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-red-600">
+                            <span>- Impozit ({fiscalRules?.salary?.income_tax_rate || 10}%):</span>
+                            <span>-{result.incomeTax.toFixed(2)} RON</span>
+                          </div>
+                          {result.voucherValue > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>+ Tichete masă:</span>
+                              <span>+{result.voucherValue.toFixed(2)} RON</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-xl font-bold text-green-600 pt-3 border-t">
+                            <span>Salariu NET:</span>
+                            <span>{result.net.toFixed(2)} RON</span>
+                          </div>
+                          {currency === 'EUR' && (
+                            <div className="flex justify-between text-sm text-slate-600">
+                              <span>Echivalent EUR:</span>
+                              <span>{(result.net / exchangeRate).toFixed(2)} EUR</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Employer Side */}
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-lg border-b pb-2">Ce plătește Angajatorul</h3>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">Salariu Brut:</span>
+                            <span className="font-bold">{result.gross.toFixed(2)} RON</span>
+                          </div>
+                          <div className="flex justify-between text-red-600">
+                            <span>+ CAM ({fiscalRules?.salary?.cam_rate || 2.25}%):</span>
+                            <span>+{result.cam.toFixed(2)} RON</span>
+                          </div>
+                          {result.voucherValue > 0 && (
+                            <div className="flex justify-between text-red-600">
+                              <span>+ Tichete masă:</span>
+                              <span>+{result.voucherValue.toFixed(2)} RON</span>
+                            </div>
+                          )}
+                          {result.overtaxed && (
+                            <>
+                              <div className="flex justify-between text-orange-600">
+                                <span>+ Extra CAS (part-time):</span>
+                                <span>+{result.employerExtraCAS?.toFixed(2)} RON</span>
+                              </div>
+                              <div className="flex justify-between text-orange-600">
+                                <span>+ Extra CASS (part-time):</span>
+                                <span>+{result.employerExtraCASS?.toFixed(2)} RON</span>
+                              </div>
+                            </>
+                          )}
+                          <div className="flex justify-between text-xl font-bold text-red-600 pt-3 border-t">
+                            <span>Cost Total:</span>
+                            <span>{result.totalCost.toFixed(2)} RON</span>
+                          </div>
+                          {currency === 'EUR' && (
+                            <div className="flex justify-between text-sm text-slate-600">
+                              <span>Echivalent EUR:</span>
+                              <span>{(result.totalCost / exchangeRate).toFixed(2)} EUR</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {result.exemptAmount && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-green-600 mt-0.5" />
+                          <div className="text-sm text-green-800">
+                            <strong>Facilitate fiscală activă:</strong> Scutire impozit pentru {result.exemptAmount.toFixed(2)} RON
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {result.overtaxed && (
+                      <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-orange-600 mt-0.5" />
+                          <div className="text-sm text-orange-800">
+                            <strong>Overtaxare part-time:</strong> Angajatorul suportă diferența până la salariul minim
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Comparison with 2025 */}
+                {comparison2025 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Comparație 2025 vs 2026</CardTitle>
+                      <CardDescription>Impactul modificărilor legislative</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>Salariu Net 2025:</span>
+                          <span>{comparison2025.net.toFixed(2)} RON</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Salariu Net 2026:</span>
+                          <span>{result.net.toFixed(2)} RON</span>
+                        </div>
+                        <div className="flex justify-between font-bold pt-2 border-t">
+                          <span>Diferență:</span>
+                          <span className={result.net - comparison2025.net >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {result.net - comparison2025.net >= 0 ? '+' : ''}
+                            {(result.net - comparison2025.net).toFixed(2)} RON
+                            ({((result.net - comparison2025.net) / comparison2025.net * 100).toFixed(2)}%)
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-slate-500">
+                  <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Introduceți datele și apăsați "Calculează"</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
