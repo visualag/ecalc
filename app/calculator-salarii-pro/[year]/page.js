@@ -13,7 +13,7 @@ import { SalaryCalculator, getBNRExchangeRate } from '@/lib/salary-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
 import { saveToStorage, loadFromStorage, clearStorage } from '@/components/CalculatorLayout';
-import { printPDF, generateSalarySlip } from '@/lib/pdf-export';
+import { generateSalaryPDF } from '@/lib/pdf-export';
 
 function SalaryCalculatorContent() {
   const params = useParams();
