@@ -173,11 +173,8 @@ export default function PFACalculatorPage() {
               PDF
             </Button>
           </div>
-          </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Input Panel */}
           <div className="lg:col-span-1 space-y-4">
