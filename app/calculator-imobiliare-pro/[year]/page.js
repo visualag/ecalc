@@ -137,10 +137,13 @@ export default function RealEstateCalculatorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <Home className="h-12 w-12 animate-spin mx-auto mb-4 text-indigo-600" />
-          <p className="text-slate-600">Se încarcă calculatorul imobiliar {year}...</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
+        <NavigationHeader />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Home className="h-12 w-12 animate-spin mx-auto mb-4 text-indigo-600" />
+            <p className="text-slate-600">Se încarcă calculatorul imobiliar {year}...</p>
+          </div>
         </div>
       </div>
     );
@@ -148,28 +151,26 @@ export default function RealEstateCalculatorPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Calculator Imobiliare Pro {year}</h1>
-              <p className="text-sm text-slate-600">Randament • Credit Ipotecar • Cash-on-Cash • Analiză Investiție</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={shareCalculation}>
-                <Share2 className="h-4 w-4 mr-1" />
-                Distribuie
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-1" />
-                PDF
-              </Button>
-            </div>
+      <NavigationHeader />
+      
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Calculator Imobiliare Pro {year}</h1>
+            <p className="text-sm text-slate-600">Randament • Credit Ipotecar • Cash-on-Cash • Analiză Investiție</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={shareCalculation}>
+              <Share2 className="h-4 w-4 mr-1" />
+              Distribuie
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-1" />
+              PDF
+            </Button>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="yield">Randament</TabsTrigger>
