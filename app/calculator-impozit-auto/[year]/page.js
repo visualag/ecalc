@@ -132,26 +132,24 @@ export default function CarTaxCalculatorPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
       <NavigationHeader />
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Calculator Impozit Auto {year}</h1>
-              <p className="text-sm text-slate-600">Capacitate • Tip Vehicul • Coeficient Regional • TCO</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={shareCalculation}>
-                <Share2 className="h-4 w-4 mr-1" />
-                Distribuie
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-1" />
-                PDF
-              </Button>
-            </div>
+      
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Calculator Impozit Auto {year}</h1>
+            <p className="text-sm text-slate-600">Capacitate • Tip Vehicul • Coeficient Regional • TCO</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={shareCalculation}>
+              <Share2 className="h-4 w-4 mr-1" />
+              Distribuie
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-1" />
+              PDF
+            </Button>
           </div>
         </div>
-      </header>
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
