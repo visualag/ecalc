@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Calculator, Stethoscope, Calendar, Building2, Heart, Info, Download, Share2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Calculator, Stethoscope, Calendar, Building2, Heart, Info, Download, Share2, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { MedicalLeaveCalculator, SICK_CODES, generateSalaryHistory } from '@/lib/medical-leave-calculator';
+import NavigationHeader from '@/components/NavigationHeader';
+import { printPDF, generateMedicalLeaveReport } from '@/lib/pdf-export';
 
 export default function MedicalLeaveCalculatorPage() {
   const params = useParams();
