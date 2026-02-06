@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { Calculator, Download, Share2, Info } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Calculator, Download, Share2, Info, RotateCcw, Save } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { SalaryCalculator, getBNRExchangeRate } from '@/lib/salary-calculator';
+import NavigationHeader from '@/components/NavigationHeader';
+import { saveToStorage, loadFromStorage, clearStorage } from '@/components/CalculatorLayout';
+import { printPDF, generateSalarySlip } from '@/lib/pdf-export';
 
-export default function SalaryCalculatorProPage() {
+function SalaryCalculatorContent() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const year = parseInt(params?.year) || 2026;
   
   const [fiscalRules, setFiscalRules] = useState(null);
@@ -22,10 +26,10 @@ export default function SalaryCalculatorProPage() {
   const [calculationType, setCalculationType] = useState('brut-net');
   const [inputValue, setInputValue] = useState('');
   const [sector, setSector] = useState('standard');
-  const [dependents, setDependents] = useState(0);
-  const [children, setChildren] = useState(0);
-  const [mealVouchers, setMealVouchers] = useState(0);
-  const [voucherDays, setVoucherDays] = useState(22);
+  const [dependents, setDependents] = useState('0');
+  const [children, setChildren] = useState('0');
+  const [mealVouchers, setMealVouchers] = useState('0');
+  const [voucherDays, setVoucherDays] = useState('22');
   const [isPartTime, setIsPartTime] = useState(false);
   const [isStudentOrPensioner, setIsStudentOrPensioner] = useState(false);
   const [currency, setCurrency] = useState('RON');
@@ -34,6 +38,51 @@ export default function SalaryCalculatorProPage() {
   // Results
   const [result, setResult] = useState(null);
   const [comparison2025, setComparison2025] = useState(null);
+
+  // Load from URL params or localStorage on mount
+  useEffect(() => {
+    // Try URL params first
+    const urlValue = searchParams.get('value');
+    const urlType = searchParams.get('type');
+    const urlSector = searchParams.get('sector');
+    const urlCurrency = searchParams.get('currency');
+    
+    if (urlValue) {
+      setInputValue(urlValue);
+      if (urlType) setCalculationType(urlType);
+      if (urlSector) setSector(urlSector);
+      if (urlCurrency) setCurrency(urlCurrency);
+    } else {
+      // Try localStorage
+      const saved = loadFromStorage('salary_calculator');
+      if (saved) {
+        if (saved.inputValue) setInputValue(saved.inputValue);
+        if (saved.calculationType) setCalculationType(saved.calculationType);
+        if (saved.sector) setSector(saved.sector);
+        if (saved.dependents) setDependents(saved.dependents);
+        if (saved.children) setChildren(saved.children);
+        if (saved.mealVouchers) setMealVouchers(saved.mealVouchers);
+        if (saved.voucherDays) setVoucherDays(saved.voucherDays);
+        if (saved.currency) setCurrency(saved.currency);
+      }
+    }
+  }, [searchParams]);
+
+  // Save to localStorage when inputs change
+  useEffect(() => {
+    if (!loading) {
+      saveToStorage('salary_calculator', {
+        inputValue,
+        calculationType,
+        sector,
+        dependents,
+        children,
+        mealVouchers,
+        voucherDays,
+        currency,
+      });
+    }
+  }, [inputValue, calculationType, sector, dependents, children, mealVouchers, voucherDays, currency, loading]);
 
   useEffect(() => {
     loadFiscalRules();
@@ -149,15 +198,53 @@ export default function SalaryCalculatorProPage() {
   };
 
   const downloadPDF = () => {
-    toast.info('Export PDF în dezvoltare...');
+    if (!result) {
+      toast.error('Calculați mai întâi salariul');
+      return;
+    }
+
+    const data = generateSalarySlip(result, {
+      employeeName: 'Angajat',
+      month: 'Luna curentă',
+      year,
+      casRate: fiscalRules?.salary?.cas_rate || 25,
+      cassRate: fiscalRules?.salary?.cass_rate || 10,
+      taxRate: fiscalRules?.salary?.income_tax_rate || 10,
+      camRate: fiscalRules?.salary?.cam_rate || 2.25,
+    });
+
+    printPDF('Fluturaș de Salariu', data, {
+      subtitle: `Sector: ${sector === 'it' ? 'IT' : sector === 'construction' ? 'Construcții' : 'Standard'}`,
+      year,
+    });
+  };
+
+  const resetForm = () => {
+    setInputValue('');
+    setCalculationType('brut-net');
+    setSector('standard');
+    setDependents('0');
+    setChildren('0');
+    setMealVouchers('0');
+    setVoucherDays('22');
+    setCurrency('RON');
+    setIsPartTime(false);
+    setIsStudentOrPensioner(false);
+    setResult(null);
+    setComparison2025(null);
+    clearStorage('salary_calculator');
+    toast.success('Formular resetat');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <Calculator className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-slate-600">Se încarcă regulile fiscale {year}...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <NavigationHeader />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Calculator className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+            <p className="text-slate-600">Se încarcă regulile fiscale {year}...</p>
+          </div>
         </div>
       </div>
     );
@@ -165,28 +252,31 @@ export default function SalaryCalculatorProPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {year}</h1>
-              <p className="text-sm text-slate-600">Toate facilitățile fiscale • Calcul în 3 direcții</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={shareCalculation}>
-                <Share2 className="h-4 w-4 mr-1" />
-                Distribuie
-              </Button>
-              <Button variant="outline" size="sm" onClick={downloadPDF}>
-                <Download className="h-4 w-4 mr-1" />
-                PDF
-              </Button>
-            </div>
+      <NavigationHeader />
+      
+      <div className="container mx-auto px-4 py-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {year}</h1>
+            <p className="text-sm text-slate-600">Toate facilitățile fiscale • Calcul în 3 direcții</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={resetForm}>
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Reset
+            </Button>
+            <Button variant="outline" size="sm" onClick={shareCalculation}>
+              <Share2 className="h-4 w-4 mr-1" />
+              Distribuie
+            </Button>
+            <Button variant="outline" size="sm" onClick={downloadPDF}>
+              <Download className="h-4 w-4 mr-1" />
+              PDF
+            </Button>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Input Panel */}
           <div className="lg:col-span-1">
@@ -504,5 +594,19 @@ export default function SalaryCalculatorProPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SalaryCalculatorProPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="flex items-center justify-center py-20">
+          <Calculator className="h-12 w-12 animate-spin text-blue-600" />
+        </div>
+      </div>
+    }>
+      <SalaryCalculatorContent />
+    </Suspense>
   );
 }
