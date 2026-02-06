@@ -376,31 +376,35 @@ export default function CarTaxCalculatorPage() {
                         {/* Breakdown */}
                         <Card>
                           <CardHeader>
-                            <CardTitle>Detalii Calcul</CardTitle>
+                            <CardTitle>Detalii Calcul - Art. 470 Cod Fiscal</CardTitle>
                             <CardDescription>
-                              {result.vehicleTypeName} • {result.engineCC} cmc • {result.location}
+                              {result.vehicleTypeName} • {result.engineCC} cmc • {result.euroNormName} • {result.location}
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
                               <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                                <span className="text-slate-600">Bază impozit (capacitate):</span>
-                                <span className="font-semibold">{formatCurrency(result.baseTax)} RON</span>
+                                <span className="text-slate-600">Fracțiuni de 200 cmc:</span>
+                                <span className="font-semibold">{result.fractions} fracțiuni</span>
                               </div>
                               <div className="flex justify-between items-center p-2">
-                                <span className="text-slate-600">Multiplicator tip vehicul:</span>
-                                <span className="font-semibold">× {result.typeMultiplier.toFixed(2)}</span>
+                                <span className="text-slate-600">Rată per fracțiune ({result.euroNormName}):</span>
+                                <span className="font-semibold">{result.ratePerFraction?.toFixed(1)} RON</span>
                               </div>
-                              {result.ageReduction > 0 && (
-                                <div className="flex justify-between items-center p-2 bg-green-50 rounded">
-                                  <span className="text-green-700">Reducere vechime ({result.vehicleAge} ani):</span>
-                                  <span className="font-semibold text-green-700">-{(result.ageReduction * 100).toFixed(0)}%</span>
-                                </div>
-                              )}
+                              <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <span className="text-slate-600">Bază impozit ({result.fractions} × {result.ratePerFraction?.toFixed(1)}):</span>
+                                <span className="font-semibold">{result.baseTax?.toFixed(2)} RON</span>
+                              </div>
                               <div className="flex justify-between items-center p-2">
                                 <span className="text-slate-600">Coeficient locație ({result.location}):</span>
-                                <span className="font-semibold">× {result.locationCoefficient.toFixed(2)}</span>
+                                <span className="font-semibold">× {result.locationCoefficient?.toFixed(2)}</span>
                               </div>
+                              {result.luxuryTax > 0 && (
+                                <div className="flex justify-between items-center p-2 bg-purple-50 rounded">
+                                  <span className="text-purple-700">Suprataxă lux (0.9%):</span>
+                                  <span className="font-semibold text-purple-700">+{formatCurrency(result.luxuryTax)} RON</span>
+                                </div>
+                              )}
                               <div className="flex justify-between items-center p-3 bg-amber-100 rounded-lg text-lg">
                                 <span className="font-bold text-amber-800">Impozit Anual:</span>
                                 <span className="font-bold text-amber-800">{formatCurrency(result.finalTax)} RON</span>
@@ -417,11 +421,14 @@ export default function CarTaxCalculatorPage() {
                               <div className="text-sm text-blue-800">
                                 <strong>Termene de plată:</strong>
                                 <ul className="list-disc list-inside mt-1">
-                                  <li>31 Martie - trimestrul I</li>
+                                  <li>31 Martie - trimestrul I (sau integral cu reducere 10%)</li>
                                   <li>30 Iunie - trimestrul II</li>
                                   <li>30 Septembrie - trimestrul III</li>
                                   <li>31 Decembrie - trimestrul IV</li>
                                 </ul>
+                                <p className="mt-2 text-xs">
+                                  Bază legală: {result.legalBasis}
+                                </p>
                               </div>
                             </div>
                           </CardContent>
