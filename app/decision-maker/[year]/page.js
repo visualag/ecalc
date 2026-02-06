@@ -192,6 +192,12 @@ export default function DecisionMakerPage() {
       ),
     });
 
+    // Calculate break-even points
+    const breakEvenCalc = new BreakEvenCalculator(fiscalRules);
+    const expenseRate = exp > 0 ? (exp / income) * 100 : 30;
+    const breakEvenTable = breakEvenCalc.generateBreakEvenTable(expenseRate, 30000);
+    setBreakEvenData(breakEvenTable);
+
     // Calculate for 2025 if available
     if (year === 2026 && fiscalRules2025) {
       const salary2025 = calculateSalary(income, fiscalRules2025);
