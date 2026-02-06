@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { SalaryCalculator } from '@/lib/salary-calculator';
 import { BreakEvenCalculator } from '@/lib/break-even-calculator';
-import Header from '@/components/Header';
+import NavigationHeader from '@/components/NavigationHeader';
 
 export default function DecisionMakerPage() {
   const params = useParams();
@@ -244,14 +244,7 @@ export default function DecisionMakerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Decision Maker {year}</h1>
-            <p className="text-sm text-slate-600">Comparație Salariu vs PFA vs SRL • Analiză Break-even</p>
-          </div>
-        </div>
-      </header>
+      <NavigationHeader />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-6">
