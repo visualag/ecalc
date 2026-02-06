@@ -2,29 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Briefcase, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, Building2, User, ArrowLeftRight, Info, Download, Share2, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { PFACalculator, NORME_VENIT_2026, getNormaVenit } from '@/lib/pfa-calculator';
+import { getBNRExchangeRate } from '@/lib/salary-calculator';
 
 export default function PFACalculatorPage() {
   const params = useParams();
   const year = parseInt(params?.year) || 2026;
+  
   const [fiscalRules, setFiscalRules] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('compare');
   
-  const [system, setSystem] = useState('real');
-  const [annualRevenue, setAnnualRevenue] = useState('');
-  const [expenses, setExpenses] = useState('');
-  const [normValue, setNormValue] = useState('30000');
-  const [result, setResult] = useState(null);
-  const [comparison, setComparison] = useState(null);
+  // Inputs
+  const [yearlyIncome, setYearlyIncome] = useState('');
+  const [yearlyExpenses, setYearlyExpenses] = useState('');
+  const [expenseRate, setExpenseRate] = useState(30);
+  const [activity, setActivity] = useState('it_programare');
+  const [customNorm, setCustomNorm] = useState('');
+  const [optOutCAS, setOptOutCAS] = useState(false);
+  const [optOutCASS, setOptOutCASS] = useState(false);
+  const [currency, setCurrency] = useState('RON');
+  const [exchangeRate, setExchangeRate] = useState(4.98);
+  const [srlEmployees, setSrlEmployees] = useState(0);
+  
+  // Results
+  const [comparisonResult, setComparisonResult] = useState(null);
+  const [fullComparisonResult, setFullComparisonResult] = useState(null);
 
   useEffect(() => {
     loadFiscalRules();
+    loadExchangeRate();
   }, [year]);
 
   const loadFiscalRules = async () => {
@@ -39,373 +54,562 @@ export default function PFACalculatorPage() {
     }
   };
 
-  const calculateReal = () => {
-    const revenue = parseFloat(annualRevenue);
-    const exp = parseFloat(expenses) || 0;
-    const netIncome = revenue - exp;
-    
-    const minSalary = fiscalRules.pfa.minimum_salary || 4050;
-    const incomeTaxRate = (fiscalRules.pfa.income_tax_rate || 10) / 100;
-    const cassRate = (fiscalRules.pfa.cass_rate || 10) / 100;
-    const casRate = (fiscalRules.pfa.cas_rate || 25) / 100;
-    
-    const incomeTax = netIncome * incomeTaxRate;
-    
-    const minThresholdCASS = minSalary * (fiscalRules.pfa.cass_min_threshold || 6);
-    const maxThresholdCASS = minSalary * (fiscalRules.pfa.cass_max_threshold || 60);
-    let cassBase = Math.max(netIncome, minThresholdCASS);
-    cassBase = Math.min(cassBase, maxThresholdCASS);
-    const cass = cassBase * cassRate;
-    
-    const threshold12 = minSalary * (fiscalRules.pfa.cas_min_optional || 12);
-    const threshold24 = minSalary * (fiscalRules.pfa.cas_obligatory_24 || 24);
-    let cas = 0;
-    let casStatus = 'Optional';
-    
-    if (netIncome < threshold12) {
-      cas = 0;
-      casStatus = 'Optional (sub 12 salarii minime)';
-    } else if (netIncome < threshold24) {
-      cas = threshold12 * casRate;
-      casStatus = 'Obligatoriu la 12 salarii minime';
-    } else {
-      cas = threshold24 * casRate;
-      casStatus = 'Obligatoriu la 24 salarii minime';
-    }
-    
-    const totalTaxes = incomeTax + cass + cas;
-    const netRemaining = revenue - exp - totalTaxes;
-    const effectiveRate = (totalTaxes / revenue) * 100;
-    
-    return {
-      system: 'Sistem Real',
-      revenue,
-      expenses: exp,
-      netIncome,
-      incomeTax,
-      cass,
-      cassBase,
-      cas,
-      casStatus,
-      totalTaxes,
-      netRemaining,
-      effectiveRate,
-      thresholds: {
-        cassMin: minThresholdCASS,
-        cassMax: maxThresholdCASS,
-        cas12: threshold12,
-        cas24: threshold24,
-      },
-    };
+  const loadExchangeRate = async () => {
+    const rate = await getBNRExchangeRate('EUR');
+    setExchangeRate(rate);
   };
 
-  const calculateNorm = () => {
-    const revenue = parseFloat(annualRevenue);
-    const norm = parseFloat(normValue);
-    
-    const minSalary = fiscalRules.pfa.minimum_salary || 4050;
-    const incomeTaxRate = (fiscalRules.pfa.income_tax_rate || 10) / 100;
-    const cassRate = (fiscalRules.pfa.cass_rate || 10) / 100;
-    const casRate = (fiscalRules.pfa.cas_rate || 25) / 100;
-    
-    const incomeTax = norm * incomeTaxRate;
-    
-    const minThresholdCASS = minSalary * (fiscalRules.pfa.cass_min_threshold || 6);
-    const maxThresholdCASS = minSalary * (fiscalRules.pfa.cass_max_threshold || 60);
-    let cassBase = Math.max(norm, minThresholdCASS);
-    cassBase = Math.min(cassBase, maxThresholdCASS);
-    const cass = cassBase * cassRate;
-    
-    const threshold12 = minSalary * (fiscalRules.pfa.cas_min_optional || 12);
-    let cas = 0;
-    let casStatus = 'Optional';
-    
-    if (norm < threshold12) {
-      cas = 0;
-      casStatus = 'Optional (normă sub 12 salarii)';
-    } else {
-      cas = threshold12 * casRate;
-      casStatus = 'Obligatoriu la 12 salarii minime';
-    }
-    
-    const totalTaxes = incomeTax + cass + cas;
-    const netRemaining = revenue - totalTaxes;
-    const effectiveRate = (totalTaxes / revenue) * 100;
-    
-    const normLimit = fiscalRules.pfa.norm_limit_eur || 25000;
-    const overLimit = revenue > normLimit * 4.98;
-    
-    return {
-      system: 'Normă de Venit',
-      revenue,
-      normValue: norm,
-      incomeTax,
-      cass,
-      cassBase,
-      cas,
-      casStatus,
-      totalTaxes,
-      netRemaining,
-      effectiveRate,
-      normLimit: normLimit * 4.98,
-      overLimit,
-      thresholds: {
-        cassMin: minThresholdCASS,
-        cassMax: maxThresholdCASS,
-        cas12: threshold12,
-      },
-    };
-  };
-
-  const calculate = () => {
-    if (!fiscalRules || !annualRevenue || parseFloat(annualRevenue) <= 0) {
+  const calculateComparison = () => {
+    if (!fiscalRules || !yearlyIncome) {
       toast.error('Introduceți venitul anual');
       return;
     }
 
-    const realResult = calculateReal();
-    const normResult = calculateNorm();
+    const calculator = new PFACalculator(fiscalRules);
+    const income = parseFloat(yearlyIncome) * (currency === 'EUR' ? exchangeRate : 1);
+    const expenses = yearlyExpenses 
+      ? parseFloat(yearlyExpenses) * (currency === 'EUR' ? exchangeRate : 1)
+      : income * (expenseRate / 100);
+    const norm = customNorm ? parseFloat(customNorm) : getNormaVenit(activity);
+
+    const options = { optOutCAS, optOutCASS };
+    const result = calculator.compare(income, expenses, norm, options);
+    setComparisonResult(result);
     
-    setResult(system === 'real' ? realResult : normResult);
-    setComparison({ real: realResult, norm: normResult });
+    // Full comparison with SRL
+    const fullResult = calculator.fullComparison(income, expenses, norm, { 
+      ...options, 
+      employees: srlEmployees 
+    });
+    setFullComparisonResult(fullResult);
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('ro-RO', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
+
+  const shareCalculation = () => {
+    const params = new URLSearchParams({
+      income: yearlyIncome,
+      expenses: yearlyExpenses || '',
+      rate: expenseRate,
+      activity,
+      currency,
+    });
+    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Link copiat în clipboard!');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
         <div className="text-center">
-          <Briefcase className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-slate-600">Se încarcă...</p>
+          <Calculator className="h-12 w-12 animate-spin mx-auto mb-4 text-emerald-600" />
+          <p className="text-slate-600">Se încarcă regulile fiscale {year}...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Calculator PFA {year}</h1>
-            <p className="text-sm text-slate-600">Sistem Real vs Normă de Venit • Plafoane CAS/CASS</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Calculator PFA Profesional {year}</h1>
+              <p className="text-sm text-slate-600">Sistem Real vs. Normă de Venit • CASS/CAS • Comparație SRL</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={shareCalculation}>
+                <Share2 className="h-4 w-4 mr-1" />
+                Distribuie
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-1" />
+                PDF
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
-          <div>
+          {/* Input Panel */}
+          <div className="lg:col-span-1 space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Date Intrare</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-emerald-600" />
+                  Date PFA
+                </CardTitle>
+                <CardDescription>Introduceți veniturile și cheltuielile</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Venit Anual</Label>
+                    <Input
+                      type="number"
+                      value={yearlyIncome}
+                      onChange={(e) => setYearlyIncome(e.target.value)}
+                      placeholder="100000"
+                    />
+                  </div>
+                  <div>
+                    <Label>Monedă</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RON">RON</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {currency === 'EUR' && (
+                  <div className="text-xs text-slate-600 bg-emerald-50 p-2 rounded">
+                    Curs BNR: 1 EUR = {exchangeRate.toFixed(4)} RON
+                  </div>
+                )}
+
                 <div>
-                  <Label>Sistem Impunere</Label>
-                  <Select value={system} onValueChange={setSystem}>
+                  <Label>Cheltuieli Anuale (opțional)</Label>
+                  <Input
+                    type="number"
+                    value={yearlyExpenses}
+                    onChange={(e) => setYearlyExpenses(e.target.value)}
+                    placeholder="Lasă gol pentru estimare"
+                  />
+                </div>
+
+                {!yearlyExpenses && (
+                  <div>
+                    <Label>Estimare Cheltuieli (%)</Label>
+                    <Select value={expenseRate.toString()} onValueChange={(v) => setExpenseRate(parseInt(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10% - Minimă</SelectItem>
+                        <SelectItem value="20">20% - Redusă</SelectItem>
+                        <SelectItem value="30">30% - Medie</SelectItem>
+                        <SelectItem value="40">40% - Ridicată</SelectItem>
+                        <SelectItem value="50">50% - Foarte ridicată</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div>
+                  <Label>Domeniu de Activitate</Label>
+                  <Select value={activity} onValueChange={setActivity}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="real">Sistem Real</SelectItem>
-                      <SelectItem value="norm">Normă de Venit</SelectItem>
+                      <SelectItem value="it_programare">IT / Programare</SelectItem>
+                      <SelectItem value="it_consultanta">IT / Consultanță</SelectItem>
+                      <SelectItem value="contabilitate">Contabilitate</SelectItem>
+                      <SelectItem value="avocatura">Avocatură</SelectItem>
+                      <SelectItem value="medicina">Medicină</SelectItem>
+                      <SelectItem value="arhitectura">Arhitectură</SelectItem>
+                      <SelectItem value="constructii">Construcții</SelectItem>
+                      <SelectItem value="transport_marfa">Transport Marfă</SelectItem>
+                      <SelectItem value="turism">Turism</SelectItem>
+                      <SelectItem value="restaurant">Restaurant/HoReCa</SelectItem>
+                      <SelectItem value="frizerie_coafura">Frizerie/Coafură</SelectItem>
+                      <SelectItem value="reparatii_auto">Reparații Auto</SelectItem>
+                      <SelectItem value="agricultura">Agricultură</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Normă estimată: {formatCurrency(getNormaVenit(activity))} RON/an
+                  </p>
                 </div>
 
                 <div>
-                  <Label>Venit Brut Anual (RON)</Label>
+                  <Label>Normă Personalizată (opțional)</Label>
                   <Input
                     type="number"
-                    value={annualRevenue}
-                    onChange={(e) => setAnnualRevenue(e.target.value)}
-                    placeholder="ex: 150000"
+                    value={customNorm}
+                    onChange={(e) => setCustomNorm(e.target.value)}
+                    placeholder={getNormaVenit(activity).toString()}
                   />
                 </div>
 
-                {system === 'real' && (
-                  <div>
-                    <Label>Cheltuieli Deductibile (RON)</Label>
-                    <Input
-                      type="number"
-                      value={expenses}
-                      onChange={(e) => setExpenses(e.target.value)}
-                      placeholder="ex: 40000"
+                <div className="pt-2 border-t space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="optCAS"
+                      checked={optOutCAS}
+                      onChange={(e) => setOptOutCAS(e.target.checked)}
+                      className="h-4 w-4"
                     />
+                    <Label htmlFor="optCAS" className="text-sm">Nu plătesc CAS (sub prag)</Label>
                   </div>
-                )}
-
-                {system === 'norm' && (
-                  <div>
-                    <Label>Valoare Normă Anuală (RON)</Label>
-                    <Input
-                      type="number"
-                      value={normValue}
-                      onChange={(e) => setNormValue(e.target.value)}
-                      placeholder="ex: 30000"
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="optCASS"
+                      checked={optOutCASS}
+                      onChange={(e) => setOptOutCASS(e.target.checked)}
+                      className="h-4 w-4"
                     />
-                    <p className="text-xs text-slate-500 mt-1">Depinde de județ și CAEN</p>
+                    <Label htmlFor="optCASS" className="text-sm">Nu plătesc CASS (sub prag)</Label>
                   </div>
-                )}
+                </div>
 
-                <Button onClick={calculate} className="w-full">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  Calculează
+                <Button onClick={calculateComparison} className="w-full bg-emerald-600 hover:bg-emerald-700" size="lg">
+                  <ArrowLeftRight className="h-4 w-4 mr-2" />
+                  Compară Opțiuni
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* SRL Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  Opțiuni SRL
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <Label>Număr Angajați</Label>
+                  <Select value={srlEmployees.toString()} onValueChange={(v) => setSrlEmployees(parseInt(v))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0 - Impozit 3%</SelectItem>
+                      <SelectItem value="1">1+ - Impozit 1%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Impozit micro: {srlEmployees === 0 ? '3%' : '1%'} din cifra de afaceri
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Results Panel */}
           <div className="lg:col-span-2">
-            {result ? (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{result.system} {year}</CardTitle>
-                    <CardDescription>
-                      Calcul complet cu plafoane CAS și CASS
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-slate-600">Venit Brut:</span>
-                            <span className="font-bold">{result.revenue.toFixed(2)} RON</span>
-                          </div>
-                          {result.expenses !== undefined && (
-                            <div className="flex justify-between text-red-600">
-                              <span>- Cheltuieli:</span>
-                              <span>-{result.expenses.toFixed(2)} RON</span>
-                            </div>
+            {comparisonResult ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="compare">Comparație Rapidă</TabsTrigger>
+                  <TabsTrigger value="details">Detalii Complete</TabsTrigger>
+                  <TabsTrigger value="full">PFA vs SRL</TabsTrigger>
+                </TabsList>
+
+                {/* Quick Comparison */}
+                <TabsContent value="compare" className="space-y-4 mt-4">
+                  {/* Winner Banner */}
+                  <Card className={`border-2 ${comparisonResult.comparison.betterOption === 'norma_venit' ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'}`}>
+                    <CardContent className="py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {comparisonResult.comparison.betterOption === 'norma_venit' ? (
+                            <TrendingUp className="h-8 w-8 text-green-600" />
+                          ) : (
+                            <TrendingDown className="h-8 w-8 text-blue-600" />
                           )}
-                          {result.netIncome !== undefined && (
-                            <div className="flex justify-between font-medium">
-                              <span>= Venit Net:</span>
-                              <span>{result.netIncome.toFixed(2)} RON</span>
-                            </div>
-                          )}
-                          {result.normValue !== undefined && (
-                            <div className="flex justify-between font-medium">
-                              <span>Valoare Normă:</span>
-                              <span>{result.normValue.toFixed(2)} RON</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-red-600">
-                            <span>- Impozit Venit (10%):</span>
-                            <span>-{result.incomeTax.toFixed(2)} RON</span>
-                          </div>
-                          <div className="flex justify-between text-red-600">
-                            <span>- CASS (10%):</span>
-                            <span>-{result.cass.toFixed(2)} RON</span>
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            Bază: {result.cassBase.toFixed(2)} RON
-                          </div>
-                          <div className="flex justify-between text-red-600">
-                            <span>- CAS (25%):</span>
-                            <span>-{result.cas.toFixed(2)} RON</span>
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            {result.casStatus}
+                          <div>
+                            <p className="font-bold text-lg">
+                              {comparisonResult.comparison.betterOption === 'norma_venit' 
+                                ? 'Normă de Venit este mai avantajoasă' 
+                                : 'Sistem Real este mai avantajos'}
+                            </p>
+                            <p className="text-sm text-slate-600">
+                              Economisești {formatCurrency(comparisonResult.comparison.yearlySavings)} RON/an 
+                              ({formatCurrency(comparisonResult.comparison.monthlySavings)} RON/lună)
+                            </p>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="border-t pt-3 space-y-2">
-                        <div className="flex justify-between text-lg">
-                          <span className="font-semibold">Total Taxe:</span>
-                          <span className="font-bold text-red-600">{result.totalTaxes.toFixed(2)} RON</span>
-                        </div>
-                        <div className="flex justify-between text-xl">
-                          <span className="font-bold">NET Rămas:</span>
-                          <span className="font-bold text-green-600">{result.netRemaining.toFixed(2)} RON</span>
-                        </div>
-                        <div className="flex justify-between text-sm text-slate-600">
-                          <span>Rată Efectivă:</span>
-                          <span>{result.effectiveRate.toFixed(2)}%</span>
-                        </div>
-                      </div>
-
-                      {result.overLimit && (
-                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
-                          <div className="flex items-start gap-2">
-                            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                            <div className="text-sm text-red-800">
-                              <strong>ATENȚIE:</strong> Venitul depășește limita de {result.normLimit.toFixed(2)} RON pentru normă de venit!
-                              Obligatoriu sistem real din anul următor.
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                        <h4 className="font-semibold mb-2 text-sm">Plafoane {year}:</h4>
-                        <div className="text-xs space-y-1 text-slate-700">
-                          <div>• CASS Min: {result.thresholds.cassMin.toFixed(2)} RON (6 salarii)</div>
-                          <div>• CASS Max: {result.thresholds.cassMax.toFixed(2)} RON (60 salarii)</div>
-                          <div>• CAS Optional sub: {result.thresholds.cas12.toFixed(2)} RON (12 salarii)</div>
-                          {result.thresholds.cas24 && (
-                            <div>• CAS Obligatoriu peste: {result.thresholds.cas24.toFixed(2)} RON (24 salarii)</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {comparison && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Comparație Sistem Real vs Normă</CardTitle>
-                      <CardDescription>Care sistem este mai avantajos?</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left p-2">Sistem</th>
-                              <th className="text-right p-2">Taxe Totale</th>
-                              <th className="text-right p-2">NET Rămas</th>
-                              <th className="text-right p-2">Rată Efectivă</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr className={`border-b ${comparison.real.netRemaining > comparison.norm.netRemaining ? 'bg-green-50' : ''}`}>
-                              <td className="p-2 font-medium">Sistem Real</td>
-                              <td className="text-right p-2 text-red-600">{comparison.real.totalTaxes.toFixed(2)} RON</td>
-                              <td className="text-right p-2 font-bold text-green-600">{comparison.real.netRemaining.toFixed(2)} RON</td>
-                              <td className="text-right p-2">{comparison.real.effectiveRate.toFixed(2)}%</td>
-                            </tr>
-                            <tr className={comparison.norm.netRemaining > comparison.real.netRemaining ? 'bg-green-50' : ''}>
-                              <td className="p-2 font-medium">Normă de Venit</td>
-                              <td className="text-right p-2 text-red-600">{comparison.norm.totalTaxes.toFixed(2)} RON</td>
-                              <td className="text-right p-2 font-bold text-green-600">{comparison.norm.netRemaining.toFixed(2)} RON</td>
-                              <td className="text-right p-2">{comparison.norm.effectiveRate.toFixed(2)}%</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-                        <p className="text-sm text-green-800">
-                          <strong>Recomandare:</strong> {comparison.real.netRemaining > comparison.norm.netRemaining ? 'Sistem Real' : 'Normă de Venit'} este mai avantajos.
-                          Economisești {Math.abs(comparison.real.netRemaining - comparison.norm.netRemaining).toFixed(2)} RON anual.
-                        </p>
                       </div>
                     </CardContent>
                   </Card>
-                )}
-              </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Sistem Real Card */}
+                    <Card className={comparisonResult.comparison.betterOption === 'sistem_real' ? 'ring-2 ring-blue-500' : ''}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-blue-500" />
+                          Sistem Real
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Venit Brut:</span>
+                          <span>{formatCurrency(comparisonResult.sistemReal.yearlyIncome)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Cheltuieli:</span>
+                          <span>-{formatCurrency(comparisonResult.sistemReal.yearlyExpenses)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>CAS ({fiscalRules?.pfa?.cas_rate || 25}%):</span>
+                          <span>-{formatCurrency(comparisonResult.sistemReal.cas)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>CASS ({fiscalRules?.pfa?.cass_rate || 10}%):</span>
+                          <span>-{formatCurrency(comparisonResult.sistemReal.cass)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>Impozit ({fiscalRules?.pfa?.income_tax_rate || 10}%):</span>
+                          <span>-{formatCurrency(comparisonResult.sistemReal.incomeTax)} RON</span>
+                        </div>
+                        <div className="flex justify-between font-bold pt-2 border-t text-lg">
+                          <span>Net Anual:</span>
+                          <span className="text-green-600">{formatCurrency(comparisonResult.sistemReal.finalNet)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-slate-600">
+                          <span>Net Lunar:</span>
+                          <span>{formatCurrency(comparisonResult.sistemReal.monthlyNet)} RON</span>
+                        </div>
+                        <div className="text-xs text-slate-500 pt-2">
+                          Rată efectivă: {comparisonResult.sistemReal.effectiveRate.toFixed(1)}%
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Normă de Venit Card */}
+                    <Card className={comparisonResult.comparison.betterOption === 'norma_venit' ? 'ring-2 ring-green-500' : ''}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                          Normă de Venit
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Normă Aplicată:</span>
+                          <span>{formatCurrency(comparisonResult.normaVenit.normAmount)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-slate-500">
+                          <span>Venit Real (netaxat):</span>
+                          <span>{formatCurrency(comparisonResult.normaVenit.actualIncome)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>CAS:</span>
+                          <span>-{formatCurrency(comparisonResult.normaVenit.cas)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>CASS:</span>
+                          <span>-{formatCurrency(comparisonResult.normaVenit.cass)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>Impozit pe Normă:</span>
+                          <span>-{formatCurrency(comparisonResult.normaVenit.incomeTax)} RON</span>
+                        </div>
+                        <div className="flex justify-between font-bold pt-2 border-t text-lg">
+                          <span>Net Anual:</span>
+                          <span className="text-green-600">{formatCurrency(comparisonResult.normaVenit.finalNet)} RON</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-slate-600">
+                          <span>Net Lunar:</span>
+                          <span>{formatCurrency(comparisonResult.normaVenit.monthlyNet)} RON</span>
+                        </div>
+                        <div className="text-xs text-slate-500 pt-2">
+                          Total Taxe: {formatCurrency(comparisonResult.normaVenit.totalTaxes)} RON
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Detailed View */}
+                <TabsContent value="details" className="space-y-4 mt-4">
+                  {/* CAS/CASS Info */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Informații Contribuții {year}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* CAS Info */}
+                        <div className="p-4 bg-blue-50 rounded-lg">
+                          <h4 className="font-semibold text-blue-800 mb-2">CAS (Pensii) - {fiscalRules?.pfa?.cas_rate || 25}%</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Status:</span>
+                              <span className={comparisonResult.sistemReal.casInfo.isOptional ? 'text-green-600' : 'text-red-600'}>
+                                {comparisonResult.sistemReal.casInfo.isOptional ? 'Opțional' : 'Obligatoriu'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Plătit:</span>
+                              <span>{formatCurrency(comparisonResult.sistemReal.cas)} RON</span>
+                            </div>
+                            {comparisonResult.sistemReal.casInfo.years > 0 && (
+                              <div className="flex justify-between">
+                                <span>Stagiu Cotizare:</span>
+                                <span>{comparisonResult.sistemReal.casInfo.years} ani</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* CASS Info */}
+                        <div className="p-4 bg-emerald-50 rounded-lg">
+                          <h4 className="font-semibold text-emerald-800 mb-2">CASS (Sănătate) - {fiscalRules?.pfa?.cass_rate || 10}%</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Status:</span>
+                              <span className={comparisonResult.sistemReal.cassInfo.isOptional ? 'text-green-600' : 'text-red-600'}>
+                                {comparisonResult.sistemReal.cassInfo.isOptional ? 'Opțional' : 'Obligatoriu'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Plătit:</span>
+                              <span>{formatCurrency(comparisonResult.sistemReal.cass)} RON</span>
+                            </div>
+                            {comparisonResult.sistemReal.cassInfo.capped && (
+                              <div className="text-xs text-orange-600">
+                                Plafonat la 60 salarii minime
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded flex items-start gap-2">
+                        <Info className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-amber-800">
+                          <strong>Praguri {year}:</strong>
+                          <ul className="list-disc list-inside mt-1 space-y-1">
+                            <li>CASS obligatoriu peste {formatCurrency((fiscalRules?.pfa?.minimum_salary || 4050) * 6)} RON/an (6 salarii minime)</li>
+                            <li>CAS obligatoriu peste {formatCurrency((fiscalRules?.pfa?.minimum_salary || 4050) * 12)} RON/an (12 salarii minime)</li>
+                            <li>Plafon CASS: {formatCurrency((fiscalRules?.pfa?.minimum_salary || 4050) * 60)} RON/an</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Full Comparison with SRL */}
+                <TabsContent value="full" className="space-y-4 mt-4">
+                  {fullComparisonResult && (
+                    <>
+                      {/* Ranking */}
+                      <Card className="border-2 border-purple-200 bg-purple-50">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-purple-600" />
+                            Clasament: PFA vs SRL Microîntreprindere
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {fullComparisonResult.ranking.map((item, index) => (
+                              <div 
+                                key={item.type}
+                                className={`flex items-center justify-between p-3 rounded-lg ${
+                                  index === 0 ? 'bg-green-100 border-2 border-green-400' : 'bg-white border'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                                    index === 0 ? 'bg-green-500 text-white' : 'bg-slate-200'
+                                  }`}>
+                                    {index + 1}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold">{item.type}</p>
+                                    <p className="text-xs text-slate-500">Rată efectivă: {item.rate.toFixed(1)}%</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-lg">{formatCurrency(item.net)} RON</p>
+                                  <p className="text-xs text-slate-500">{formatCurrency(item.net / 12)} RON/lună</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* SRL Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Detalii SRL Microîntreprindere</CardTitle>
+                          <CardDescription>
+                            Impozit {fullComparisonResult.srl.microTaxRate}% pe cifra de afaceri + 8% dividende + CASS
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">Cifră de Afaceri:</span>
+                              <span>{formatCurrency(fullComparisonResult.srl.yearlyRevenue)} RON</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">Cheltuieli:</span>
+                              <span>-{formatCurrency(fullComparisonResult.srl.yearlyExpenses)} RON</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">Profit înainte de impozit:</span>
+                              <span>{formatCurrency(fullComparisonResult.srl.profit)} RON</span>
+                            </div>
+                            <div className="flex justify-between text-red-600">
+                              <span>Impozit Micro ({fullComparisonResult.srl.microTaxRate}%):</span>
+                              <span>-{formatCurrency(fullComparisonResult.srl.microTax)} RON</span>
+                            </div>
+                            <div className="flex justify-between text-red-600">
+                              <span>Impozit Dividende (8%):</span>
+                              <span>-{formatCurrency(fullComparisonResult.srl.dividendTax)} RON</span>
+                            </div>
+                            <div className="flex justify-between text-red-600">
+                              <span>CASS Dividende (10%):</span>
+                              <span>-{formatCurrency(fullComparisonResult.srl.cassDividend)} RON</span>
+                            </div>
+                            <div className="flex justify-between font-bold pt-2 border-t text-lg">
+                              <span>Dividend Net Anual:</span>
+                              <span className="text-green-600">{formatCurrency(fullComparisonResult.srl.netDividend)} RON</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Recommendation */}
+                      <Card className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
+                        <CardContent className="py-6">
+                          <div className="flex items-center gap-4">
+                            <ChevronRight className="h-10 w-10" />
+                            <div>
+                              <p className="text-lg font-bold">{fullComparisonResult.recommendation}</p>
+                              <p className="text-emerald-100 text-sm mt-1">
+                                Diferență față de ultima opțiune: {formatCurrency(fullComparisonResult.ranking[0].net - fullComparisonResult.ranking[fullComparisonResult.ranking.length - 1].net)} RON/an
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </TabsContent>
+              </Tabs>
             ) : (
               <Card>
                 <CardContent className="py-12 text-center text-slate-500">
-                  <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Introduceți datele și apăsați "Calculează"</p>
+                  <ArrowLeftRight className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">Introduceți veniturile și apăsați "Compară Opțiuni"</p>
+                  <p className="text-sm mt-2">Vom calcula automat cea mai avantajoasă formă juridică</p>
                 </CardContent>
               </Card>
             )}
