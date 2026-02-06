@@ -2,7 +2,7 @@
 
 ## 📱 Accesare Aplicație
 
-**URL Principal:** https://bug-hunter-ecalc.preview.emergentagent.com
+**URL Principal:** https://romcalc-1.preview.emergentagent.com
 
 ### Pagini Disponibile:
 - **Homepage:** `/` - Lista cu toate calculatoarele
@@ -243,7 +243,7 @@ ADMIN_PASSWORD=Admin2026!
 - Connection string în `.env`
 
 **Deployment:**
-- URL: https://bug-hunter-ecalc.preview.emergentagent.com
+- URL: https://romcalc-1.preview.emergentagent.com
 - Supervisor: `sudo supervisorctl restart nextjs`
 
 ---
