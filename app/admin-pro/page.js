@@ -42,18 +42,40 @@ export default function AdminPage() {
 
   const loadData = async () => {
     try {
-      const [settingsRes, leadsRes] = await Promise.all([
+      const [fiscalRes, settingsRes, leadsRes] = await Promise.all([
+        fetch(`/api/fiscal-rules/${selectedYear}`),
         fetch('/api/settings'),
         fetch('/api/leads'),
       ]);
 
+      const fiscalData = await fiscalRes.json();
       const settingsData = await settingsRes.json();
       const leadsData = await leadsRes.json();
 
+      setFiscalRules(fiscalData);
       setSettings(settingsData);
       setLeads(leadsData);
     } catch (error) {
       toast.error('Eroare la încărcarea datelor');
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [selectedYear, isAuthenticated]);
+
+  const updateFiscalRules = async () => {
+    try {
+      await fetch(`/api/fiscal-rules/${selectedYear}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fiscalRules),
+      });
+      toast.success(`Reguli fiscale ${selectedYear} actualizate cu succes!`);
+    } catch (error) {
+      toast.error('Eroare la actualizarea regulilor fiscale');
     }
   };
 
