@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                             <p className="text-xs text-slate-500 mt-1">CAS la baza de 12 salarii</p>
                           </div>
                           <div>
-                            <Label>Bază CAS >24 salarii</Label>
+                            <Label>Bază CAS peste 24 salarii</Label>
                             <Input
                               type="number"
                               value={fiscalRules.pfa.cas_base_24 || 24}
