@@ -596,13 +596,471 @@ export default function AdminDashboard() {
                   </Card>
                 )}
 
-                {/* Placeholder for other modules - will add in next iteration */}
-                {!['salary', 'pfa'].includes(activeModule) && (
+                {/* MEDICAL LEAVE MODULE */}
+                {activeModule === 'medical_leave' && fiscalRules.medical_leave && (
                   <Card>
-                    <CardContent className="py-12 text-center">
-                      <Settings className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-                      <p className="text-slate-600">Configurare modul {activeModule} în dezvoltare...</p>
-                      <p className="text-sm text-slate-500 mt-2">Momentan modificați direct în baza de date</p>
+                    <CardHeader>
+                      <CardTitle>Reguli Fiscale - Concediu Medical {selectedYear}</CardTitle>
+                      <CardDescription>
+                        Configurare coduri de boală, procente și plafoane conform OUG 158/2005
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                          Plafoane și Bază de Calcul
+                          <a href="https://www.anaf.ro" target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Verifică pe ANAF
+                          </a>
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Plafon Maxim (în salarii minime)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.medical_leave.max_salary_cap || 12}
+                              onChange={(e) => updateFiscalField('medical_leave', 'max_salary_cap', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Baza de calcul plafonată la X salarii minime (12 în 2026)</p>
+                          </div>
+                          <div>
+                            <Label>Stagiu Minim Cotizare (luni)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.medical_leave.min_contribution_months || 6}
+                              onChange={(e) => updateFiscalField('medical_leave', 'min_contribution_months', parseInt(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Stagiu necesar în ultimele 12 luni (6 luni)</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4">Coduri de Boală și Procente Indemnizație</h3>
+                        <div className="space-y-3">
+                          <div className="grid md:grid-cols-3 gap-4 p-3 bg-slate-50 rounded">
+                            <div>
+                              <Label>Cod 01 - Boală Obișnuită (%)</Label>
+                              <Input
+                                type="number"
+                                value={fiscalRules.medical_leave.code_01_percent || 75}
+                                onChange={(e) => updateFiscalField('medical_leave', 'code_01_percent', parseFloat(e.target.value))}
+                              />
+                            </div>
+                            <div>
+                              <Label>Cod 06 - Urgență Medico-Chirurgicală (%)</Label>
+                              <Input
+                                type="number"
+                                value={fiscalRules.medical_leave.code_06_percent || 100}
+                                onChange={(e) => updateFiscalField('medical_leave', 'code_06_percent', parseFloat(e.target.value))}
+                              />
+                            </div>
+                            <div>
+                              <Label>Cod 08,09,15 - Maternitate/Copil (%)</Label>
+                              <Input
+                                type="number"
+                                value={fiscalRules.medical_leave.code_maternity_percent || 85}
+                                onChange={(e) => updateFiscalField('medical_leave', 'code_maternity_percent', parseFloat(e.target.value))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4">Surse de Plată</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Zile Plătite de Angajator</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.medical_leave.employer_paid_days || 5}
+                              onChange={(e) => updateFiscalField('medical_leave', 'employer_paid_days', parseInt(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Primele zile calendaristice (5 în 2026)</p>
+                          </div>
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={fiscalRules.medical_leave.cass_applies || true}
+                                onChange={(e) => updateFiscalField('medical_leave', 'cass_applies', e.target.checked)}
+                                className="h-4 w-4"
+                              />
+                              CASS Aplicabil pe Indemnizații
+                            </Label>
+                            <p className="text-xs text-slate-500 mt-1">10% CASS se aplică pe indemnizații</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={updateFiscalRules} className="w-full" size="lg">
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvează Reguli Concediu Medical {selectedYear}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* CAR TAX MODULE */}
+                {activeModule === 'car_tax' && fiscalRules.car_tax && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Reguli Fiscale - Impozit Auto {selectedYear}</CardTitle>
+                      <CardDescription>
+                        Coeficienți pe grupe de cilindree și facilitați fiscale
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                          Coeficienți per Grupă Cilindree
+                          <a href="https://www.anaf.ro" target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Tabel ANAF
+                          </a>
+                        </h3>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Sub 1.600 cmc (RON/200 cmc)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.coeff_under_1600 || 18}
+                              onChange={(e) => updateFiscalField('car_tax', 'coeff_under_1600', parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label>1.601 - 2.000 cmc (RON/200 cmc)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.coeff_1601_2000 || 72}
+                              onChange={(e) => updateFiscalField('car_tax', 'coeff_1601_2000', parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label>2.001 - 2.600 cmc (RON/200 cmc)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.coeff_2001_2600 || 144}
+                              onChange={(e) => updateFiscalField('car_tax', 'coeff_2001_2600', parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label>2.601 - 3.000 cmc (RON/200 cmc)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.coeff_2601_3000 || 290}
+                              onChange={(e) => updateFiscalField('car_tax', 'coeff_2601_3000', parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label>Peste 3.000 cmc (RON/200 cmc)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.coeff_over_3000 || 580}
+                              onChange={(e) => updateFiscalField('car_tax', 'coeff_over_3000', parseFloat(e.target.value))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4">Facilitați Fiscale</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={fiscalRules.car_tax.electric_exempt || true}
+                                onChange={(e) => updateFiscalField('car_tax', 'electric_exempt', e.target.checked)}
+                                className="h-4 w-4"
+                              />
+                              Scutire 100% Electrice
+                            </Label>
+                            <p className="text-xs text-slate-500 mt-1">Mașini 100% electrice - impozit 0</p>
+                          </div>
+                          <div>
+                            <Label>Reducere Hibride (%)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.hybrid_reduction || 50}
+                              onChange={(e) => updateFiscalField('car_tax', 'hybrid_reduction', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Reducere pentru hibride (50% standard)</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4">Alte Categorii Vehicule</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Autoutilitare / Camioane (RON fix)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.utility_vehicle_rate || 150}
+                              onChange={(e) => updateFiscalField('car_tax', 'utility_vehicle_rate', parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label>Motociclete peste 1600 cmc (RON)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.car_tax.motorcycle_over_1600 || 72}
+                              onChange={(e) => updateFiscalField('car_tax', 'motorcycle_over_1600', parseFloat(e.target.value))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={updateFiscalRules} className="w-full" size="lg">
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvează Reguli Impozit Auto {selectedYear}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* REAL ESTATE MODULE */}
+                {activeModule === 'real_estate' && fiscalRules.real_estate && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Reguli Fiscale - Imobiliare {selectedYear}</CardTitle>
+                      <CardDescription>
+                        Configurare impozit chirii, CASS, vacancy rate și fond de rezervă
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-4">Taxare Venituri din Chirii</h3>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Impozit pe Chirii (%)</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={fiscalRules.real_estate.rental_income_tax || 10}
+                              onChange={(e) => updateFiscalField('real_estate', 'rental_income_tax', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Standard 10% din chiria brută</p>
+                          </div>
+                          <div>
+                            <Label>Deducere Cheltuieli (%)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.real_estate.expense_deduction || 20}
+                              onChange={(e) => updateFiscalField('real_estate', 'expense_deduction', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Deducere forfetară 20%</p>
+                          </div>
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={fiscalRules.real_estate.cass_on_rent || true}
+                                onChange={(e) => updateFiscalField('real_estate', 'cass_on_rent', e.target.checked)}
+                                className="h-4 w-4"
+                              />
+                              CASS Aplicabil
+                            </Label>
+                            <p className="text-xs text-slate-500 mt-1">CASS 10% peste praguri</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4">Parametri Calculator Randament</h3>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Vacancy Rate Default (%)</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={fiscalRules.real_estate.vacancy_rate || 8.33}
+                              onChange={(e) => updateFiscalField('real_estate', 'vacancy_rate', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Estimare lună vacantă/an (8.33% = 1 lună)</p>
+                          </div>
+                          <div>
+                            <Label>Fond de Rezervă (%)</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={fiscalRules.real_estate.reserve_fund || 10}
+                              onChange={(e) => updateFiscalField('real_estate', 'reserve_fund', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Fond pentru neprevăzute (10% standard)</p>
+                          </div>
+                          <div>
+                            <Label>Mentenanță Anuală (% din chirie)</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={fiscalRules.real_estate.maintenance_rate || 5}
+                              onChange={(e) => updateFiscalField('real_estate', 'maintenance_rate', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Cost mentenanță estimat</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                          Surse Date Piață
+                          <a href="https://www.imobiliare.ro" target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="h-3 w-3" />
+                            imobiliare.ro
+                          </a>
+                        </h3>
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                          <p className="text-sm text-blue-900">
+                            <strong>Verifică prețuri actualizate:</strong>
+                          </p>
+                          <ul className="text-xs text-blue-800 mt-2 space-y-1">
+                            <li>• Prețuri medii: www.imobiliare.ro, www.storia.ro</li>
+                            <li>• Rapoarte piață: www.insse.ro (INS)</li>
+                            <li>• Randamente: Analize trimestriale imobiliare</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <Button onClick={updateFiscalRules} className="w-full" size="lg">
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvează Reguli Imobiliare {selectedYear}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* E-FACTURA MODULE */}
+                {activeModule === 'efactura' && fiscalRules.efactura && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Reguli Fiscale - e-Factura {selectedYear}</CardTitle>
+                      <CardDescription>
+                        Configurare termene și obligativitate
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                          Termene de Transmitere
+                          <a href="https://e-factura.anaf.ro" target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Portal ANAF
+                          </a>
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Zile Lucrătoare pentru Transmitere</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.efactura.working_days_deadline || 5}
+                              onChange={(e) => updateFiscalField('efactura', 'working_days_deadline', parseInt(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Standard: 5 zile lucrătoare de la emitere</p>
+                          </div>
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={fiscalRules.efactura.b2b_mandatory || true}
+                                onChange={(e) => updateFiscalField('efactura', 'b2b_mandatory', e.target.checked)}
+                                className="h-4 w-4"
+                              />
+                              B2B Obligatoriu
+                            </Label>
+                            <p className="text-xs text-slate-500 mt-1">Obligatoriu pentru tranzacții B2B din 2024</p>
+                          </div>
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={fiscalRules.efactura.b2c_mandatory || (selectedYear >= 2025)}
+                                onChange={(e) => updateFiscalField('efactura', 'b2c_mandatory', e.target.checked)}
+                                className="h-4 w-4"
+                              />
+                              B2C Obligatoriu
+                            </Label>
+                            <p className="text-xs text-slate-500 mt-1">Obligatoriu pentru B2C din 2025</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={updateFiscalRules} className="w-full" size="lg">
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvează Reguli e-Factura {selectedYear}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* FLIGHT MODULE */}
+                {activeModule === 'flight' && fiscalRules.flight && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Reguli Fiscale - Compensații Zboruri {selectedYear}</CardTitle>
+                      <CardDescription>
+                        Sume compensații conform Regulamentul EU 261/2004
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                          Sume Compensații (EUR)
+                          <a href="https://eur-lex.europa.eu" target="_blank" rel="noopener" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Reg. EU 261/2004
+                          </a>
+                        </h3>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>Sub 1.500 km (EUR)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.flight.compensation_under_1500 || 250}
+                              onChange={(e) => updateFiscalField('flight', 'compensation_under_1500', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Zboruri scurte (250 EUR standard)</p>
+                          </div>
+                          <div>
+                            <Label>1.500 - 3.500 km (EUR)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.flight.compensation_1500_3500 || 400}
+                              onChange={(e) => updateFiscalField('flight', 'compensation_1500_3500', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Zboruri medii (400 EUR standard)</p>
+                          </div>
+                          <div>
+                            <Label>Peste 3.500 km (EUR)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.flight.compensation_over_3500 || 600}
+                              onChange={(e) => updateFiscalField('flight', 'compensation_over_3500', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Zboruri lungi (600 EUR standard)</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-4">Condiții Eligibilitate</h3>
+                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                          <p className="text-sm text-yellow-900">
+                            <strong>Întârziere minimă:</strong> 3 ore la destinație
+                          </p>
+                          <p className="text-xs text-yellow-800 mt-2">
+                            Compensația poate fi redusă cu 50% dacă pasagerul ajunge la destinație într-un interval de timp rezonabil.
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button onClick={updateFiscalRules} className="w-full" size="lg">
+                        <Save className="h-4 w-4 mr-2" />
+                        Salvează Reguli Compensații Zboruri {selectedYear}
+                      </Button>
                     </CardContent>
                   </Card>
                 )}
