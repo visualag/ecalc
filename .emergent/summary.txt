@@ -1,0 +1,204 @@
+<analysis>
+
+**original_problem_statement**: The user initially requested a Next.js application with 6 financial calculators, an admin dashboard, and monetization features, initially targeting a Cloudflare architecture. This request then pivoted to a standard Next.js + MongoDB setup.
+
+A second, major pivot occurred where the user provided a detailed, enterprise-level specification to rebuild the entire application into a professional, multi-year expert system for fiscal consultation.
+
+**PRODUCT REQUIREMENTS (Current):**
+- **Architecture:** Multi-year support (2025, 2026, etc.), allowing fiscal rules to be configured per year via an Admin Dashboard.
+- **Module 1 (Salary Calculator):** A professional salary engine supporting Brut→Net, Net→Brut, and Cost→Net calculations, handling fiscal exceptions (IT, Construction), part-time rules, and deductions.
+- **Module 2 (PFA Calculator):** Compares Sistem Real vs. Normă de Venit with CASS/CAS threshold calculations.
+- **Module 3 (Medical Leave Calculator):** Implements OUG 158/2005 logic, including contribution period checks, calculation basis, and payment source splits (employer vs. FNUASS).
+- **Module 4 (Car Tax Calculator):** Calculates tax based on engine capacity, vehicle type, and regional coefficients.
+- **Module 5 (Real Estate Calculator):** Calculates Gross/Net Yield, Cash-on-Cash Return, and includes a loan simulator.
+- **Module 6 (Rights Calculator):** Includes a flight compensation calculator (EU261) and an e-Invoice deadline/penalty calculator.
+- **Core Feature (Decision Maker):** A comparison tool to show the net income across Salaried, PFA, and SRL structures.
+- **Pro Features:** PDF/Print export, live currency conversion (BNR API), session saving (Local Storage), shareable calculation URLs, and a Google PageSpeed score of 95+.
+- **Admin Control:** The admin dashboard must allow editing of all fiscal variables (percentages, thresholds, legal holidays) for each year independently.
+- **SEO:** Dynamic routes per topic/year (e.g., ), with editable meta tags and SEO content fields in the admin.
+
+**User's preferred language**: Romanian (română). The next agent MUST respond in Romanian.
+
+**what currently exists?**
+The initial MVP with 6 simple calculators and a basic admin panel was built and then deprecated. The project has been partially rebuilt into a sophisticated, multi-year fiscal calculation engine.
+
+The new architecture's foundation is complete:
+- A multi-year backend API () fetches configuration from MongoDB based on the selected year. It has been seeded with data for 2025 and 2026.
+- A new professional admin dashboard exists at  with tabs for managing fiscal rules for 2025 and 2026.
+- The complex backend logic for the **Professional Salary Calculator** is implemented in .
+- The frontend pages for the **Professional Salary Calculator** () and the **Decision Maker** () have been created and are rendering correctly.
+- A new homepage links to these new professional tools.
+
+**Last working item**:
+- **Last item agent was working**: The agent was about to start implementing the frontend pages and specific logic for the remaining 5 professional calculator modules (PFA, Medical Leave, Car Tax, Real Estate, Rights/e-Invoice), as requested by the user in the last message.
+- **Status**: NOT STARTED
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: Frontend testing agent. The agent should test each new calculator page as it is created to ensure it renders correctly and that the input fields and result tables are present as per the requirements. Backend logic will also need to be created and tested via  or a test script.
+- **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+This section is empty as there are no known bugs or recurring issues at the moment. The main focus is on implementing new features.
+
+**In progress Task List**:
+- **Task 1**: Complete the Decision Maker Module (P0)
+    - **Where to resume**: The frontend page  exists but only contains the structure for the Salary calculation. The backend logic and UI components for PFA and SRL calculations need to be created and integrated.
+    - **What will be achieved with this?**: This will deliver the core value proposition of the new application: allowing users to compare different fiscal structures side-by-side.
+    - **Status**: IN PROGRESS
+    - **Should Test frontend/backend/both after fix?**: Both.
+    - **Blocked on something**: Backend logic for PFA and SRL calculators needs to be created first.
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks**:
+    1.  **Implement Module 2: PFA Calculator (P0)**:
+        - Create the backend logic file (e.g., ) for Sistem Real vs. Normă de Venit.
+        - Implement the frontend page .
+    2.  **Implement Module 3: Medical Leave Calculator (P1)**:
+        - Create the backend logic file for OUG 158/2005 rules.
+        - Implement the frontend page .
+    3.  **Implement Module 4: Car Tax Calculator (P1)**:
+        - Create the backend logic file for tax calculation based on engine capacity and region.
+        - Implement the frontend page .
+    4.  **Implement Module 5: Real Estate Calculator (P1)**:
+        - Create the backend logic file for Yield, ROI, and loan simulation.
+        - Implement the frontend page .
+    5.  **Implement Module 6: Rights Calculator (P1)**:
+        - Create the backend logic file for EU261 flight compensation and e-Factura deadlines.
+        - Implement the frontend page .
+- **Future Tasks**:
+    1.  **Implement Pro Features (P2)**:
+        - **PDF/Print Export**: Add functionality to all calculators to generate a Fluturaș de Salariu or report.
+        - **BNR API Integration**: Integrate a currency conversion API for EUR/USD inputs.
+        - **Session Saving**: Use Local Storage to save user input across sessions.
+        - **Shareable URLs**: Implement functionality to generate a unique URL that pre-fills the calculator with specific data.
+    2.  **Admin SEO Enhancements (P2)**:
+        - Add rich text editors to the admin panel for each calculator page to manage SEO content and FAQs.
+    3.  **Code Refactoring (P3)**:
+        - Remove the old, deprecated MVP calculator pages (e.g., ) and their related API logic to avoid code duplication and confusion.
+
+**Completed work in this session**
+- **Initial MVP**:
+  - Built a 6-calculator app with a basic Admin panel on Next.js + MongoDB.
+  - Implemented monetization enhancements (multiple ad/affiliate slots).
+- **Professional Re-architecture (Phase 1)**:
+  - **Backend**: Created a multi-year fiscal rules API () that serves different configurations from MongoDB based on the year.
+  - **Admin**: Built a new professional admin dashboard at  with tabs to manage settings for 2025 and 2026.
+  - **Salary Module**:
+    - Created the advanced backend logic in .
+    - Created the professional frontend page at .
+  - **Decision Maker Module**:
+    - Created the initial frontend page at .
+  - **UI Components**: Created necessary shadcn/ui components like Tabs and Table ().
+
+**Earlier issues found/mentioned but not fixed**
+There are no known issues that were mentioned and not fixed. The agent has been responsive to debugging and feature requests.
+
+**Known issue recurrence from previous fork**
+None. This is the first summary for this job.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Framework**: Next.js (App Router)
+- **Backend**: Next.js API Routes
+- **Database**: MongoDB (via Mongoose)
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Architecture**: Multi-year data structure in MongoDB, where fiscal rules are stored in a collection indexed by year. The API and frontend dynamically load rules based on the URL parameter.
+
+**key DB schema**
+- ** collection**:
+  - : (Number, unique) e.g., 2025, 2026
+  - : (Object) Contains all fiscal variables for that year, e.g., 
+- ** collection**:
+  - , , , , , 
+- ** collection**: (DEPRECATED by , but may still contain old data and monetization settings)
+
+**changes in tech stack**
+- The initial user request for a Cloudflare Workers/KV stack was discarded in favor of a Next.js/MongoDB stack.
+
+**All files of reference**
+- : The core of the application backend. Contains the logic for fetching multi-year fiscal rules, the old MVP API, and the new Admin Pro endpoints.
+- : The new, complex class-based logic for the professional salary calculator.
+- : The new professional Admin UI for managing multi-year settings.
+- : The new frontend for the professional salary calculator.
+- : The new frontend for the fiscal comparison tool.
+
+**Areas that need refactoring**:
+- The old MVP code (pages in , , etc. and related API logic in ) is now redundant and should be removed to clean up the codebase. The  collection should also be fully migrated to  and then dropped.
+
+**key api endpoints**
+- : Fetches all fiscal variables for the specified year.
+- : Updates the fiscal variables for the specified year (used by Admin Pro).
+- : Saves a lead to the database.
+
+**Critical Info for New Agent**
+- The user is extremely demanding and wants fast, complete execution. **Avoid asking for confirmation or proposing phased rollouts.** Proceed directly to implementing the requested features.
+- The user's last request is the highest priority: implement the frontend and backend logic for the remaining 5 professional calculators (Modules 2-6).
+- The multi-year architecture is the foundation of the project. All new features must be built on top of it, fetching configuration using the  parameter.
+- The user has provided very specific and complex business logic for each calculator. Refer to message #128 for the detailed requirements of each module.
+
+**documents created in this job**
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- ╔════════════════════════════════════════════════════════════════╗
+║         eCalc RO - GitHub Deployment Script                   ║
+╚════════════════════════════════════════════════════════════════╝
+
+📦 Initializing Git repository...
+✅ Git already initialized
+📝 Adding all files...
+💾 Creating commit...
+[main 39f36d7] eCalc RO MVP - Production Ready with 3 Monetization Improvements
+ 1 file changed, 2329 insertions(+)
+ create mode 100644 yarn.lock
+✅ Commit created
+
+🔗 Setting up remote repository...
+
+⚠️  ACTION REQUIRED:
+
+I need your GitHub username to proceed.
+Please enter your GitHub username:
+❌ No username provided. Exiting.
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User**: Implement frontend and logic for the 5 remaining modules (PFA, Medical, Auto, Real Estate, Rights) immediately. (PENDING)
+2.  **Agent**: Summary of work done.
+3.  **User**: No summaries. Write the code for  and  pages now. (Completed)
+4.  **Agent**: Summary of Phase 1 & 2 foundation.
+5.  **User**: Excellent, foundation is good. No more confirmations. Implement Phase 2 (Salary Pro, Decision Maker, Modules 2-6) fully now. (In Progress)
+6.  **Agent**: Summary of progress.
+7.  **User**: Choose Option A. No more phases. Execute now, starting with multi-year architecture and Admin dashboard. (Completed)
+8.  **Agent**: Proposes a phased approach for the massive rebuild.
+9.  **User**: Provides a massive, multi-page specification for a complete professional rebuild of the entire application. (Started)
+10. **Agent**: Final summary of the MVP, providing instructions to push to GitHub.
+
+**Project Health Check:**
+- **Broken**: Nothing is outright broken.
+- **Mocked**: The frontend for the Decision Maker is partially mocked as it lacks the backend logic for PFA and SRL. The other 5 calculator modules are not yet implemented.
+
+**3rd Party Integrations**
+- None currently implemented.
+- **Planned**: BNR (National Bank of Romania) API for live currency exchange rates.
+
+**Testing status**
+- **Testing agent used after significant changes**: NO
+- **Troubleshoot agent used after agent stuck in loop**: NO
+- **Test files created**: None.
+- **Known regressions**: None.
+
+**Credentials to test flow:**
+- MongoDB URI is in : 
+- Admin Login (for old admin): Not explicitly defined, but the API  returns a dummy success token. The new admin  has no auth yet.
+
+**What agent forgot to execute**
+- The agent has not yet implemented the Pro features from the user's detailed spec (Message 128), such as PDF/Print export, BNR API integration, session saving, or shareable URLs.
+- The agent updated the  calculator page during the monetization enhancement phase but did not explicitly show updates for the other 5 MVP calculators. This is now less relevant as the entire MVP is being replaced.
+- The agent has not yet implemented any authentication for the new  dashboard.
+
+</analysis>
