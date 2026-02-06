@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Home, Calculator, TrendingUp, Wallet, Building, CreditCard, Info, Download, Share2, PiggyBank, BarChart3 } from 'lucide-react';
+import { Home, Calculator, TrendingUp, Wallet, Building, CreditCard, Info, Download, Share2, PiggyBank, BarChart3, RotateCcw } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { RealEstateCalculator, PROPERTY_TYPES, CITIES_AVG_YIELD } from '@/lib/real-estate-calculator';
+import NavigationHeader from '@/components/NavigationHeader';
 
 export default function RealEstateCalculatorPage() {
   const params = useParams();
