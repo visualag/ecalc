@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { SalaryCalculator } from '@/lib/salary-calculator';
 import { BreakEvenCalculator } from '@/lib/break-even-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
+import Footer from '@/components/Footer';
 
 export default function DecisionMakerPage() {
   const params = useParams();
@@ -538,6 +539,7 @@ export default function DecisionMakerPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

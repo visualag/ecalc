@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { EFacturaCalculator } from '@/lib/efactura-calculator';
 import { HolidaysCalculator } from '@/lib/holidays-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
+import Footer from '@/components/Footer';
 
 export default function EFacturaPage() {
   const params = useParams();
@@ -245,6 +246,7 @@ export default function EFacturaPage() {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

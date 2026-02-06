@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { FlightCompensationCalculator, AIRPORTS_DATABASE } from '@/lib/flight-compensation-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
+import Footer from '@/components/Footer';
 
 export default function FlightCompensationPage() {
   const params = useParams();
@@ -323,6 +324,7 @@ export default function FlightCompensationPage() {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
