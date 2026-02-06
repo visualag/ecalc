@@ -111,11 +111,24 @@ export default function MedicalLeaveCalculatorPage() {
       toast.error('Calculați mai întâi indemnizația');
       return;
     }
-    const data = generateMedicalLeaveReport(result, { year });
-    printPDF('Raport Concediu Medical', data, {
-      subtitle: `Cod ${sickCode} - ${result.sickInfo.name}`,
-      year,
-    });
+    
+    try {
+      const data = {
+        'Cod concediu': `${sickCode} - ${result.sickInfo?.name || 'Boală obișnuită'}`,
+        'Zile concediu': result.days || 0,
+        'Salariu mediu brut': `${formatCurrency(result.averageSalary || 0)} RON`,
+        'Indemnizație brută': `${formatCurrency(result.grossIndemnity || 0)} RON`,
+        'Indemnizație netă': `${formatCurrency(result.netIndemnity || 0)} RON`,
+        'Plătitor primele 5 zile': 'Angajator',
+        'Plătitor restul zilelor': result.sickInfo?.paidBy || 'CNAS',
+      };
+      
+      generateGenericPDF(`Raport Concediu Medical ${year}`, data, year);
+      toast.success('PDF descărcat cu succes');
+    } catch (error) {
+      toast.error('Eroare la generarea PDF-ului');
+      console.error(error);
+    }
   };
 
   if (loading) {
