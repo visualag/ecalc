@@ -229,13 +229,21 @@
     file: "/app/app/admin-pro/page.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
         comment: |
           Verificat: Admin panel se încarcă corect.
           Login form funcționează, request către /api/auth/login este procesat corect.
+      - working: true
+        agent: "main"
+        comment: |
+          ÎMBUNĂTĂȚIRE: Interfață actualizată pentru formula regresivă:
+          - Explicație clară vizuală despre formula regresivă (praguri și calcul)
+          - 3 câmpuri separate: Deducere Bază Maximă (510), Prag Regresiv (2000), Deducere per Copil (100)
+          - Secțiune nouă: Curs Valutar EUR/RON cu opțiune auto-update BNR
+          Admin poate controla: curs manual override sau preluare automată BNR.
   
   - task: "Homepage"
     implemented: true
@@ -255,13 +263,43 @@
     file: "/app/app/calculator-*/[year]/page.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
         comment: |
           Verificat: Calculator Salarii PRO se încarcă corect.
           Toate cele 7 calculatoare sunt prezente și funcționale.
+      - working: true
+        agent: "main"
+        comment: |
+          ÎMBUNĂTĂȚIRE MAJORĂ: Calculator Salarii PRO actualizat:
+          - Folosește curs valutar din fiscal_rules (cu fallback la BNR)
+          - Card nou: "Total Taxe - Distribuție Stat vs Angajat"
+          - Grafic vizual cu bare colorate pentru % Stat (roșu) vs % Angajat (verde)
+          - Tabele detaliate cu breakdown: taxe angajat, taxe angajator
+          - Text informativ: "Pentru a plăti salariu net de X, angajatorul cheltuiește Y"
+          Design conform stil fintech modern.
+  
+  - task: "PDF Export"
+    implemented: true
+    working: true
+    file: "/app/lib/pdf-export.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          REFACTORIZARE COMPLETĂ - Stil Fintech fără diacritice:
+          - Helper nou: removeDiacritics() - elimină ă,â,î,ș,ț din tot textul PDF
+          - Layout minimalist, clean, stil fintech profesional
+          - Cards side-by-side pentru Brut și Net (blue/green)
+          - Fără bara grafică colorată (conform cerință)
+          - Secțiune "Distribuție Salariu": doar TEXT cu procente în cards
+          - Toate label-urile și textele fără diacritice
+          PDF-ul este simplu, profesional, optimizat pentru print.
 
 ## metadata:
   created_by: "main_agent"
