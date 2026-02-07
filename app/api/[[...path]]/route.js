@@ -292,6 +292,141 @@ async function initializeFiscalRules(db) {
       updatedAt: new Date(),
     });
   }
+  
+  // Add templates for 2027-2030 (cu valori estimate, editabile din admin)
+  for (let year = 2027; year <= 2030; year++) {
+    const existingYear = await fiscalRules.findOne({ year });
+    if (!existingYear) {
+      const estimatedMinSalary = 4050 + (year - 2026) * 200; // Estimare crestere ~200 RON/an
+      await fiscalRules.insertOne({
+        year,
+        salary: {
+          // === PRAGURI FUNDAMENTALE ===
+          minimum_salary: estimatedMinSalary,
+          average_salary: 7500 + (year - 2026) * 300,
+          
+          // === PROCENTE TAXE STANDARD ===
+          cas_rate: 25,
+          pilon2_rate: 4.75,
+          cass_rate: 10,
+          income_tax_rate: 10,
+          cam_rate: 2.25,
+          
+          // === SUME NETAXABILE SI BENEFICII ===
+          untaxed_amount_enabled: true,
+          untaxed_amount: 300,
+          meal_voucher_max: 40 + (year - 2026) * 5, // Estimare crestere tichete
+          gift_voucher_threshold: 300,
+          meal_allowance_max: 70 + (year - 2026) * 5,
+          
+          // === DEDUCERI PERSONALE ===
+          personal_deduction_base: 510,
+          personal_deduction_range: 2000,
+          child_deduction: 100,
+          dependent_deduction: 0,
+          
+          // === DEDUCTIBILITATE ABONAMENTE ===
+          medical_subscription_limit_eur: 400,
+          pilon3_limit_eur: 400,
+          union_fee_deductible: true,
+          
+          // === SCUTIRI SI EXCEPTII ===
+          tax_exemption_threshold: 10000,
+          youth_exemption_enabled: true,
+          youth_exemption_age: 26,
+          youth_exemption_threshold: estimatedMinSalary + 2000,
+          disability_tax_exempt: true,
+          
+          // === SECTOR IT ===
+          it_tax_exempt: true,
+          it_threshold: 10000,
+          it_pilon2_optional: true,
+          
+          // === CONSTRUCTII / AGRICULTURA ===
+          construction_cas_rate: 21.25,
+          construction_tax_exempt: true,
+          construction_cass_exempt: false,
+          agriculture_cas_rate: 21.25,
+          agriculture_tax_exempt: true,
+          agriculture_cass_exempt: false,
+          
+          // === CONCEDIU MEDICAL ===
+          medical_leave_calculation_enabled: true,
+          medical_leave_rate_75: true,
+          medical_leave_rate_100: false,
+          medical_leave_cass_exempt: true,
+          medical_leave_cam_exempt: true,
+          
+          // === SUPRATAXARE PART-TIME ===
+          part_time_overtax_enabled: true,
+          part_time_minor_exempt: true,
+          part_time_student_exempt: true,
+          part_time_pensioner_exempt: true,
+          part_time_second_job_exempt: true,
+        },
+        exchange_rate: {
+          eur: 5.0923,
+          auto_update: true,
+        },
+        pfa: {
+          minimum_salary: estimatedMinSalary,
+          cas_rate: 25,
+          cass_rate: 10,
+          income_tax_rate: 10,
+          cass_min_threshold: 6,
+          cass_max_threshold: 60,
+          cas_min_optional: 12,
+          cas_obligatory_12: 12,
+          cas_obligatory_24: 24,
+          norm_limit_eur: 25000,
+        },
+        medical_leave: {
+          minimum_months: 6,
+          max_base_salaries: 12,
+          code_01_rate: 75,
+          code_06_rate: 100,
+          code_08_rate: 85,
+          employer_days: 5,
+          apply_cass: false,
+        },
+        car_tax: {
+          under_1600: 72,
+          from_1601_to_2000: 144,
+          from_2001_to_2600: 288,
+          from_2601_to_3000: 432,
+          over_3000: 576,
+          electric_exempt: true,
+          hybrid_reduction: 50,
+          motorcycle_under_1600: 25,
+          motorcycle_over_1600: 50,
+        },
+        real_estate: {
+          rental_tax_rate: 10,
+          rental_deduction: 20,
+          maintenance_rate: 1,
+          vacancy_rate: 8.33,
+          reserve_fund: 10,
+        },
+        efactura: {
+          business_days: 5,
+          fine_min_micro: 1000,
+          fine_max_micro: 5000,
+          fine_min_medium: 5000,
+          fine_max_medium: 10000,
+          fine_min_large: 10000,
+          fine_max_large: 25000,
+        },
+        flight: {
+          under_1500km: 250,
+          from_1500_to_3500km: 400,
+          over_3500km: 600,
+          minimum_delay_hours: 3,
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+  }
 }
 
 // Initialize admin users and old settings
