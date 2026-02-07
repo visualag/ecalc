@@ -106,6 +106,21 @@
   Extrage din repo github ecalc (https://github.com/artgrup/ecalc). 
   Analizeaza si repara bug-urile sa fie functional.
   Focus pe admin login unde este toata arhitectura de calcul - ceva s-a stricat acolo.
+  
+  CONTINUARE:
+  Transforma campul "Deducere Baza": In loc de un input in care scrii tu 510, acesta ar trebui sa fie pragul maxim. 
+  In spate, codul trebuie sa aplice formula regresiva:
+  - Daca Brut <= SalariuMinim: Deducere = Maxima (510 RON)
+  - Daca Brut > SalariuMinim si <= SalariuMinim + 2000: se aplica algoritmul regresiv
+  - Daca Brut > pragul limita: Deducere = 0
+  
+  Sincronizarea campurilor: "Deducere Baza" (510) si "Deducere per Copil" (100). 
+  Calculul final rezulta din combinarea acestora si aplicarea regresivitatii.
+  
+  Adaugarea campului de Curs Valutar EUR/RON in admin (ex: 5.0923).
+  
+  Modificare PDF: Elimina diacritice, stil fintech simplu, fara bara grafica colorata.
+  Adauga grafic cu bare % Stat vs Angajat in interfata web (nu in PDF).
 
 ## backend:
   - task: "Admin Login Authentication"
