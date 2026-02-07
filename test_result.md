@@ -167,6 +167,13 @@
           Verificat: API răspunde corect la /api/fiscal-rules/2026.
           Reguli pentru 2025 și 2026 sunt inițializate în MongoDB.
           Arhitectura de calcul este intactă și funcțională.
+      - working: true
+        agent: "main"
+        comment: |
+          ÎMBUNĂTĂȚIRE: Adăugat parametri noi în fiscal_rules:
+          - personal_deduction_range: 2000 (prag regresiv peste salariu minim)
+          - exchange_rate: { eur: 5.0923, auto_update: true }
+          Formula regresivă implementată conform legislației RO 2026.
   
   - task: "Settings API"
     implemented: true
@@ -196,6 +203,24 @@
           BUG REPARAT: Fișierul .env lipsea complet.
           Am creat .env cu toate variabilele necesare (MONGO_URL, DB_NAME, etc).
           MongoDB conectat cu succes, toate collections inițializate.
+  
+  - task: "Formula Regresiva Deducere Personala"
+    implemented: true
+    working: true
+    file: "/app/lib/salary-calculator.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          IMPLEMENTAT: Formula regresivă nouă bazată pe SalariuMinim (4050 RON):
+          - Brut <= 4050: Deducere = 510 RON (maxim)
+          - 4050 < Brut <= 6050: Deducere = 510 * (1 - (Brut - 4050) / 2000)
+          - Brut > 6050: Deducere = 0 RON
+          Formula testată și validată conform legislației RO 2026 (Art. 77 Cod Fiscal).
+          Se aplică pentru toate sectoarele (standard, IT, construcții).
 
 ## frontend:
   - task: "Admin Panel Page"
