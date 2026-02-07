@@ -422,7 +422,7 @@ CORS_ORIGINS=*
 **Contact:**
 - Admin: admin@ecalc.ro
 - Database: MongoDB Atlas (ecalc_ro)
-- Live URL: https://romcalc-1.preview.emergentagent.com
+- Live URL: https://deduction-engine.preview.emergentagent.com
 
 ---
 
