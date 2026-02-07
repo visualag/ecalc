@@ -555,6 +555,121 @@ function SalaryCalculatorContent() {
                   </CardContent>
                 </Card>
 
+                {/* Tax Breakdown with Visual Bar */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Total Taxe - Distribuție Stat vs Angajat</CardTitle>
+                    <CardDescription>Vizualizare procentuală a contribuțiilor</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Summary Table */}
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">Taxe Angajat</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {(result.cas + result.cass + result.incomeTax).toFixed(2)} RON
+                          </p>
+                          {currency === 'EUR' && (
+                            <p className="text-xs text-slate-500">
+                              {((result.cas + result.cass + result.incomeTax) / exchangeRate).toFixed(2)} EUR
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">Taxe Angajator</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {(result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)).toFixed(2)} RON
+                          </p>
+                          {currency === 'EUR' && (
+                            <p className="text-xs text-slate-500">
+                              {((result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / exchangeRate).toFixed(2)} EUR
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">Total Statul</p>
+                          <p className="text-2xl font-bold text-red-600">
+                            {(result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)).toFixed(2)} RON
+                          </p>
+                          {currency === 'EUR' && (
+                            <p className="text-xs text-slate-500">
+                              {((result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / exchangeRate).toFixed(2)} EUR
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Visual Bar */}
+                      <div className="space-y-2">
+                        <div className="flex h-12 rounded-lg overflow-hidden border border-slate-200">
+                          <div 
+                            className="bg-red-500 flex items-center justify-center text-white text-sm font-semibold transition-all"
+                            style={{ 
+                              width: `${((result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / result.totalCost * 100).toFixed(2)}%` 
+                            }}
+                          >
+                            {((result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / result.totalCost * 100).toFixed(2)}% Stat
+                          </div>
+                          <div 
+                            className="bg-green-500 flex items-center justify-center text-white text-sm font-semibold transition-all"
+                            style={{ 
+                              width: `${(result.net / result.totalCost * 100).toFixed(2)}%` 
+                            }}
+                          >
+                            {(result.net / result.totalCost * 100).toFixed(2)}% Angajat
+                          </div>
+                        </div>
+                        <p className="text-xs text-center text-slate-600">
+                          Pentru a plăti un salariu net de <strong>{result.net.toFixed(2)} RON</strong>, angajatorul cheltuiește <strong>{result.totalCost.toFixed(2)} RON</strong>
+                        </p>
+                      </div>
+
+                      {/* Detailed Breakdown */}
+                      <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2 text-slate-700">Detalii Taxe Angajat:</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>CAS ({fiscalRules?.salary?.cas_rate || 25}%):</span>
+                              <span>{result.cas.toFixed(2)} RON</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>CASS ({fiscalRules?.salary?.cass_rate || 10}%):</span>
+                              <span>{result.cass.toFixed(2)} RON</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Impozit ({fiscalRules?.salary?.income_tax_rate || 10}%):</span>
+                              <span>{result.incomeTax.toFixed(2)} RON</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2 text-slate-700">Detalii Taxe Angajator:</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>CAM ({fiscalRules?.salary?.cam_rate || 2.25}%):</span>
+                              <span>{result.cam.toFixed(2)} RON</span>
+                            </div>
+                            {result.overtaxed && (
+                              <>
+                                <div className="flex justify-between text-orange-600">
+                                  <span>Extra CAS:</span>
+                                  <span>{result.employerExtraCAS?.toFixed(2)} RON</span>
+                                </div>
+                                <div className="flex justify-between text-orange-600">
+                                  <span>Extra CASS:</span>
+                                  <span>{result.employerExtraCASS?.toFixed(2)} RON</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Comparison with 2025 */}
                 {comparison2025 && (
                   <Card>
