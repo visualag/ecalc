@@ -167,22 +167,68 @@ async function initializeFiscalRules(db) {
     await fiscalRules.insertOne({
       year: 2025,
       salary: {
+        // === PRAGURI FUNDAMENTALE ===
         minimum_salary: 3700,
         average_salary: 7000,
+        
+        // === PROCENTE TAXE STANDARD ===
         cas_rate: 25,
+        pilon2_rate: 4.75,
         cass_rate: 10,
         income_tax_rate: 10,
         cam_rate: 2.25,
+        
+        // === SUME NETAXABILE SI BENEFICII ===
+        untaxed_amount_enabled: true,
+        untaxed_amount: 300,
         meal_voucher_max: 40,
-        tax_exemption_threshold: 10000,
+        gift_voucher_threshold: 300,
+        meal_allowance_max: 70,
+        
+        // === DEDUCERI PERSONALE ===
         personal_deduction_base: 510,
         personal_deduction_range: 2000,
         child_deduction: 100,
+        dependent_deduction: 0,
+        
+        // === DEDUCTIBILITATE ABONAMENTE ===
+        medical_subscription_limit_eur: 400,
+        pilon3_limit_eur: 400,
+        union_fee_deductible: true,
+        
+        // === SCUTIRI SI EXCEPTII ===
+        tax_exemption_threshold: 10000,
+        youth_exemption_enabled: true,
+        youth_exemption_age: 26,
+        youth_exemption_threshold: 5700, // 3700 + 2000
+        disability_tax_exempt: true,
+        
+        // === SECTOR IT ===
         it_tax_exempt: true,
         it_threshold: 10000,
+        it_pilon2_optional: true,
+        
+        // === CONSTRUCTII / AGRICULTURA ===
         construction_cas_rate: 21.25,
         construction_tax_exempt: true,
         construction_cass_exempt: false,
+        agriculture_cas_rate: 21.25,
+        agriculture_tax_exempt: true,
+        agriculture_cass_exempt: false,
+        
+        // === CONCEDIU MEDICAL ===
+        medical_leave_calculation_enabled: true,
+        medical_leave_rate_75: true,
+        medical_leave_rate_100: false,
+        medical_leave_cass_exempt: true,
+        medical_leave_cam_exempt: true,
+        
+        // === SUPRATAXARE PART-TIME ===
+        part_time_overtax_enabled: true,
+        part_time_minor_exempt: true,
+        part_time_student_exempt: true,
+        part_time_pensioner_exempt: true,
+        part_time_second_job_exempt: true,
       },
       exchange_rate: {
         eur: 5.0923,
