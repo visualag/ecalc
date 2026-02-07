@@ -427,6 +427,108 @@ function SalaryCalculatorContent() {
                   )}
                 </div>
 
+                {/* Calculator Avansat - Toggle */}
+                <div className="border-t pt-4">
+                  <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                  >
+                    <span>⚙️ Calcul Avansat</span>
+                    <span className="text-xs">{showAdvanced ? '▲ Ascunde' : '▼ Arată'}</span>
+                  </button>
+                  
+                  {showAdvanced && (
+                    <div className="space-y-4 mt-4 pt-4 border-t">
+                      {/* Selectoare An & Lună */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">An Fiscal</Label>
+                          <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 16 }, (_, i) => 2015 + i).map(y => (
+                                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Lună</Label>
+                          <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Noi', 'Dec'].map((m, i) => (
+                                <SelectItem key={i + 1} value={(i + 1).toString()}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Buton Salariu Minim */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInputValue(fiscalRules?.salary?.minimum_salary?.toString() || '4050')}
+                        className="w-full"
+                      >
+                        📊 Completează cu Salariu Minim ({fiscalRules?.salary?.minimum_salary || 4050} RON)
+                      </Button>
+
+                      {/* Bife Facilitați */}
+                      <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
+                        <p className="text-xs font-semibold text-slate-700 mb-2">Facilități & Scutiri:</p>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="basicFunction"
+                            checked={isBasicFunction}
+                            onChange={(e) => setIsBasicFunction(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="basicFunction" className="text-sm cursor-pointer">
+                            ✓ Funcție de bază (pentru deducere personală)
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="youthExempt"
+                            checked={isYouthExempt}
+                            onChange={(e) => {
+                              setIsYouthExempt(e.target.checked);
+                              if (e.target.checked) setAge(25); else setAge(30);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="youthExempt" className="text-sm cursor-pointer">
+                            👤 Vârstă sub 26 ani (scutire IV până la {fiscalRules?.salary?.youth_exemption_threshold || 6050} RON)
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="taxExempt"
+                            checked={isTaxExempt}
+                            onChange={(e) => setIsTaxExempt(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="taxExempt" className="text-sm cursor-pointer">
+                            ♿ Persoană cu handicap (scutire TOTALĂ IV)
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <Button onClick={calculate} className="w-full" size="lg">
                   <Calculator className="h-4 w-4 mr-2" />
                   Calculează
