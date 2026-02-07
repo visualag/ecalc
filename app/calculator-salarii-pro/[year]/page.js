@@ -95,6 +95,15 @@ function SalaryCalculatorContent() {
       const response = await fetch(`/api/fiscal-rules/${year}`);
       const data = await response.json();
       setFiscalRules(data);
+      
+      // Set exchange rate from fiscal rules or fetch from BNR
+      if (data.exchange_rate?.auto_update !== false) {
+        const rate = await getBNRExchangeRate('EUR');
+        setExchangeRate(rate);
+      } else {
+        setExchangeRate(data.exchange_rate?.eur || 5.0923);
+      }
+      
       setLoading(false);
     } catch (error) {
       toast.error('Eroare la încărcarea regulilor fiscale');
@@ -103,8 +112,8 @@ function SalaryCalculatorContent() {
   };
 
   const loadExchangeRate = async () => {
-    const rate = await getBNRExchangeRate('EUR');
-    setExchangeRate(rate);
+    // This is now handled in loadFiscalRules
+    // Kept for backwards compatibility
   };
 
   const calculate = () => {
