@@ -35,24 +35,68 @@ async function initializeFiscalRules(db) {
     await fiscalRules.insertOne({
       year: 2026,
       salary: {
+        // === PRAGURI FUNDAMENTALE ===
         minimum_salary: 4050,
         average_salary: 7500,
+        
+        // === PROCENTE TAXE STANDARD ===
         cas_rate: 25,
+        pilon2_rate: 4.75, // Procent din CAS care merge la Pilon 2 (pensie privata)
         cass_rate: 10,
         income_tax_rate: 10,
         cam_rate: 2.25,
-        meal_voucher_max: 40,
-        tax_exemption_threshold: 10000,
-        personal_deduction_base: 510,
-        personal_deduction_range: 2000,
-        child_deduction: 100,
-        // IT sector
+        
+        // === SUME NETAXABILE SI BENEFICII ===
+        untaxed_amount_enabled: true, // Toggle pentru suma netaxabila 300 RON
+        untaxed_amount: 300, // Suma netaxabila lunara (se scade inaintea tuturor taxelor)
+        meal_voucher_max: 40, // Valoare maxima zilnica tichet masa
+        gift_voucher_threshold: 300, // Prag neimpozabil tichete cadou (peste = 10% IV)
+        meal_allowance_max: 70, // Diurna neimpozabila maxima/zi (se adauga direct la Net)
+        
+        // === DEDUCERI PERSONALE (FORMULA REGRESIVA) ===
+        personal_deduction_base: 510, // Deducere maxima (la salariu <= minim)
+        personal_deduction_range: 2000, // Prag regresiv peste salariu minim
+        child_deduction: 100, // Deducere per copil (fix, nu regresiv)
+        dependent_deduction: 0, // Deducere per persoana in intretinere (altii decat copii)
+        
+        // === DEDUCTIBILITATE ABONAMENTE SI PILONUL 3 ===
+        medical_subscription_limit_eur: 400, // Limita anuala deductibila abonament medical (in EUR)
+        pilon3_limit_eur: 400, // Limita anuala deductibila Pilon 3 (in EUR)
+        union_fee_deductible: true, // Cotizatie sindicat deductibila din baza IV
+        
+        // === SCUTIRI SI EXCEPTII ===
+        tax_exemption_threshold: 10000, // Prag general scutire (ex: IT, Constructii)
+        youth_exemption_enabled: true, // Scutire IV pentru sub 26 ani
+        youth_exemption_age: 26, // Varsta maxima pentru scutire tineri
+        youth_exemption_threshold: 6050, // Prag maxim venit pentru scutire < 26 ani (SalMin + 2000)
+        disability_tax_exempt: true, // Scutire IV pentru persoane cu handicap
+        
+        // === SECTOR IT (SCUTIRI SPECIALE) ===
         it_tax_exempt: true,
-        it_threshold: 10000,
-        // Construction/Agriculture
-        construction_cas_rate: 21.25,
-        construction_tax_exempt: true,
-        construction_cass_exempt: false,
+        it_threshold: 10000, // Prag scutire IV pentru IT (primii 10.000 RON)
+        it_pilon2_optional: true, // In IT, Pilon 2 poate fi optional (bifabil)
+        
+        // === SECTOR CONSTRUCTII / AGRICULTURA ===
+        construction_cas_rate: 21.25, // CAS redus
+        construction_tax_exempt: true, // Scutire IV pana la prag
+        construction_cass_exempt: false, // CASS se aplica normal
+        agriculture_cas_rate: 21.25, // Identic cu constructii
+        agriculture_tax_exempt: true,
+        agriculture_cass_exempt: false,
+        
+        // === CONCEDIU MEDICAL (CM) ===
+        medical_leave_calculation_enabled: true, // Permite calcul zile CM
+        medical_leave_rate_75: true, // 75% din medie pentru boala obisnuita
+        medical_leave_rate_100: false, // 100% pentru anumite coduri (maternitate, accident)
+        medical_leave_cass_exempt: true, // CM scutit de CASS
+        medical_leave_cam_exempt: true, // CM scutit de CAM
+        
+        // === SUPRATAXARE PART-TIME ===
+        part_time_overtax_enabled: true, // Aplica suprataxare sub salariu minim
+        part_time_minor_exempt: true, // Sub 18 ani exceptati de la suprataxare
+        part_time_student_exempt: true, // Studenti exceptati
+        part_time_pensioner_exempt: true, // Pensionari exceptati
+        part_time_second_job_exempt: true, // Al 2-lea job (daca au alt contract full) exceptat
       },
       exchange_rate: {
         eur: 5.0923,
