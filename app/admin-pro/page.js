@@ -336,24 +336,41 @@ export default function AdminDashboard() {
                       {/* Deductions */}
                       <div className="border-t pt-4">
                         <h3 className="font-semibold mb-4">Deduceri Personale</h3>
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+                          <p className="text-sm text-blue-900">
+                            <strong>Formula Regresivă:</strong> Deducerea de bază se calculează automat:
+                            <br />• Brut ≤ Salariu Minim: Deducere = Maxim ({fiscalRules.salary.personal_deduction_base || 510} RON)
+                            <br />• Brut între {fiscalRules.salary.minimum_salary || 4050} - {(fiscalRules.salary.minimum_salary || 4050) + (fiscalRules.salary.personal_deduction_range || 2000)}: Regresiv
+                            <br />• Brut &gt; {(fiscalRules.salary.minimum_salary || 4050) + (fiscalRules.salary.personal_deduction_range || 2000)} RON: Deducere = 0
+                          </p>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
                           <div>
-                            <Label>Deducere Bază (RON/lună)</Label>
+                            <Label>Deducere Bază Maximă (RON)</Label>
                             <Input
                               type="number"
                               value={fiscalRules.salary.personal_deduction_base || 510}
                               onChange={(e) => updateFiscalField('salary', 'personal_deduction_base', parseFloat(e.target.value))}
                             />
-                            <p className="text-xs text-slate-500 mt-1">Deducere personală standard (510 RON în 2026)</p>
+                            <p className="text-xs text-slate-500 mt-1">Valoare maximă pentru salarii ≤ SalMin</p>
                           </div>
                           <div>
-                            <Label>Deducere per Copil (RON/lună)</Label>
+                            <Label>Prag Regresiv (RON)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.salary.personal_deduction_range || 2000}
+                              onChange={(e) => updateFiscalField('salary', 'personal_deduction_range', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Interval peste SalMin (standard: 2000)</p>
+                          </div>
+                          <div>
+                            <Label>Deducere per Copil (RON)</Label>
                             <Input
                               type="number"
                               value={fiscalRules.salary.child_deduction || 100}
                               onChange={(e) => updateFiscalField('salary', 'child_deduction', parseFloat(e.target.value))}
                             />
-                            <p className="text-xs text-slate-500 mt-1">Deducere suplimentară per copil sub 18 ani la școală</p>
+                            <p className="text-xs text-slate-500 mt-1">Fix, 100 RON/copil (nu regresiv)</p>
                           </div>
                         </div>
                       </div>
