@@ -800,6 +800,33 @@ function SalaryCalculatorContent() {
                           <Info className="h-5 w-5 text-green-600 mt-0.5" />
                           <div className="text-sm text-green-800">
                             <strong>Facilitate fiscală activă:</strong> Scutire impozit pentru {result.exemptAmount.toFixed(2)} RON
+                            {result.taxExemptReason && (
+                              <span className="block mt-1 text-green-700">
+                                📋 {result.taxExemptReason}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {result.taxExemptReason && !result.exemptAmount && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div className="text-sm text-blue-800">
+                            <strong>Facilitate:</strong> {result.taxExemptReason}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {result.noBasicFunctionNote && (
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <div className="text-sm text-amber-800">
+                            <strong>Atenție:</strong> {result.noBasicFunctionNote}
                           </div>
                         </div>
                       </div>
