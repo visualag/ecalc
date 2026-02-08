@@ -650,7 +650,7 @@ function SalaryCalculatorContent() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {year}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {selectedYear || year}</h1>
             <p className="text-sm text-slate-600">Toate facilitățile fiscale • Calcul în 3 direcții</p>
           </div>
           <div className="flex gap-2">
@@ -677,7 +677,26 @@ function SalaryCalculatorContent() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        {/* Tab-uri pentru Navigator */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+            <TabsTrigger value="calculator">
+              <Calculator className="h-4 w-4 mr-2" />
+              Calculator
+            </TabsTrigger>
+            <TabsTrigger value="zile-lucratoare">
+              <Calendar className="h-4 w-4 mr-2" />
+              Zile Lucratoare
+            </TabsTrigger>
+            <TabsTrigger value="zile-libere">
+              <Calendar className="h-4 w-4 mr-2" />
+              Zile Libere
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB: CALCULATOR */}
+          <TabsContent value="calculator" className="mt-6">
+            <div className="grid lg:grid-cols-3 gap-6">
           {/* Input Panel */}
           <div className="lg:col-span-1">
             <Card>
