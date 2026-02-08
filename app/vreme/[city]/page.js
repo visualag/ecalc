@@ -5,6 +5,7 @@ import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer'; 
 import { CloudSun, Wind, Droplets, Sun, Eye, Gauge, Umbrella, Thermometer } from 'lucide-react';
 
+const [nearbyPlaces, setNearbyPlaces] = useState([]);
 const ORASE_PRINCIPALE = [
   'Alba Iulia', 'Alexandria', 'Arad', 'Bacau', 'Baia Mare', 'Bistrita', 'Botosani', 'Braila', 'Brasov', 'Bucuresti',
   'Buzau', 'Calarasi', 'Cluj-Napoca', 'Constanta', 'Craiova', 'Deva', 'Drobeta-Turnu Severin', 'Focsani', 'Galati', 'Giurgiu',
@@ -39,6 +40,17 @@ export default function WeatherCityPage() {
       if (!geoData.results) throw new Error("Orasul nu a fost gasit");
       
       const { latitude, longitude, name, admin1 } = geoData.results[0];
+      // --- START FABRICA DE LINKURI ---
+try {
+  const nearbyRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${admin1}&count=20&language=ro&format=json`);
+  const nearbyData = await nearbyRes.json();
+  if (nearbyData.results) {
+    setNearbyPlaces(nearbyData.results.filter(p => p.name.toLowerCase() !== name.toLowerCase()));
+  }
+} catch (e) {
+  console.error("Eroare la fabrica de link-uri");
+}
+// --- END FABRICA DE LINKURI ---
       const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure,visibility&hourly=temperature_2m,pm10&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=14`);
       const weatherData = await weatherRes.json();
       
@@ -189,6 +201,25 @@ export default function WeatherCityPage() {
           </div>
         </div>
       </main>
+              {/* FABRICA DE LINK-URI DINAMICE - GOOGLE MAGNET */}
+{nearbyPlaces.length > 0 && (
+  <div className="mt-12 p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 shadow-inner">
+    <h3 className="text-center text-xs font-black text-blue-400 uppercase tracking-widest mb-6">
+      Vremea în alte localități din {weather.region}
+    </h3>
+    <div className="flex flex-wrap justify-center gap-3">
+      {nearbyPlaces.map((place) => (
+        <a 
+          key={place.id} 
+          href={`/vreme/${place.name.toLowerCase().replace(/\s+/g, '-')}`}
+          className="px-4 py-2 bg-white border border-blue-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl text-sm font-bold transition-all shadow-sm"
+        >
+          Vremea in {place.name}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
       <Footer />
     </div>
   );
