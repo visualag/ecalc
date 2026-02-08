@@ -394,6 +394,15 @@ export default function AdminDashboard() {
                             />
                             <p className="text-xs text-slate-500 mt-1">Fix, 100 RON/copil (nu regresiv)</p>
                           </div>
+                          <div>
+                            <Label>Deducere Alte Persoane (RON)</Label>
+                            <Input
+                              type="number"
+                              value={fiscalRules.salary.dependent_deduction || 0}
+                              onChange={(e) => updateFiscalField('salary', 'dependent_deduction', parseFloat(e.target.value))}
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Deducere per persoană în întreținere (altele decât copii)</p>
+                          </div>
                         </div>
                       </div>
 
