@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Calculator, FileText, Plane, Home as HomeIcon, Car, HeartPulse, Briefcase, Building2, TrendingUp, Scale, ArrowRight, Star, Menu, X, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calculator, FileText, Plane, Home as HomeIcon, Car, HeartPulse, Briefcase, Building2, TrendingUp, Scale, ArrowRight, Star, Menu, X, ChevronDown, Sun, Moon, CloudSun } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,26 @@ const professionalCalculators = [
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userWeather, setUserWeather] = useState(null);
+
+  useEffect(() => {
+    async function getLocalWeather() {
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        const ipData = await ipRes.json();
+        const city = ipData.city || 'Bucuresti';
+        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipData.latitude}&longitude=${ipData.longitude}&current=temperature_2m,is_day&timezone=auto`);
+        const weatherData = await weatherRes.json();
+        setUserWeather({
+          city: city,
+          temp: Math.round(weatherData.current.temperature_2m),
+          isDay: weatherData.current.is_day,
+          slug: city.toLowerCase().replace(/\s+/g, '-')
+        });
+      } catch (err) { console.error(err); }
+    }
+    getLocalWeather();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -143,9 +163,7 @@ export default function Home() {
                   </>
                 )}
               </div>
-
-              {/* Quick Links */}
-              <Link href={`/calculator-salarii-pro/${currentYear}`}>
+<Link href={`/calculator-salarii-pro/${currentYear}`}>
                 <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">
                   Salarii
                 </Button>
@@ -155,14 +173,29 @@ export default function Home() {
                   PFA
                 </Button>
               </Link>
-              <Link href={`/decision-maker/${currentYear}`}>
+              {/* Widget Vreme Inteligent */}
+              <Link href={userWeather ? `/vreme/${userWeather.slug}` : '/vreme/bucuresti'}>
+                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-2 px-3">
+                  {userWeather ? (
+                    <>
+                      {userWeather.isDay ? <Sun className="h-4 w-4 text-yellow-500 animate-pulse" /> : <Moon className="h-4 w-4 text-indigo-400" />}
+                      <span className="font-bold">{userWeather.city}: {userWeather.temp}°</span>
+                    </>
+                  ) : (
+                    <>
+                      <CloudSun className="h-4 w-4 text-blue-400" />
+                      <span className="font-bold">Vremea</span>
+                    </>
+                  )}
+                </Button>
+              </Link>
+<Link href={`/decision-maker/${currentYear}`}>
                 <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-800">
                   Decision Maker
                 </Button>
               </Link>
-
               <Link href="/admin-pro">
-                <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white ml-2">
+                <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white ml-2 font-bold">
                   Admin Pro
                 </Button>
               </Link>
