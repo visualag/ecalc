@@ -742,6 +742,9 @@ export async function GET(request, { params }) {
       return handleFiscalRulesGet(year, db);
     } else if (path === 'fiscal-rules') {
       return handleFiscalRulesGetAll(db);
+    } else if (path.startsWith('holidays/')) {
+      const year = path.split('/')[1];
+      return handleHolidaysGet(db, year);
     } else if (path === 'settings') {
       return handleSettingsGet(db);
     } else if (path === 'leads') {
@@ -756,6 +759,7 @@ export async function GET(request, { params }) {
       endpoints: [
         '/api/fiscal-rules/:year',
         '/api/fiscal-rules/all',
+        '/api/holidays/:year',
         '/api/leads',
         '/api/settings',
         '/api/auth/login'
