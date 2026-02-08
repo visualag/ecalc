@@ -1,27 +1,33 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Calculator, Download, Share2, Info, RotateCcw, Save, Mail } from 'lucide-react';
+import { Calculator, Download, Share2, Info, RotateCcw, Save, Mail, Calendar, Printer } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { SalaryCalculator, getBNRExchangeRate } from '@/lib/salary-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
 import { saveToStorage, loadFromStorage, clearStorage } from '@/components/CalculatorLayout';
 import { generateSalaryPDF } from '@/lib/pdf-export';
+import { defaultHolidays, calculateWorkingDays, calculateYearlyWorkingDays } from '@/lib/holidays-data';
 
 function SalaryCalculatorContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const year = parseInt(params?.year) || 2026;
+  const printRef = useRef(null);
   
   const [fiscalRules, setFiscalRules] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('calculator');
+  const [holidays, setHolidays] = useState([]);
+  const [yearlyData, setYearlyData] = useState(null);
   
   // Inputs - EXTENDED pentru Calculator Avansat
   const [selectedYear, setSelectedYear] = useState(year);
