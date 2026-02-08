@@ -47,19 +47,22 @@ export default function AdminDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [fiscalRes, settingsRes, leadsRes] = await Promise.all([
+      const [fiscalRes, settingsRes, leadsRes, holidaysRes] = await Promise.all([
         fetch(`/api/fiscal-rules/${selectedYear}`),
         fetch('/api/settings'),
         fetch('/api/leads'),
+        fetch(`/api/holidays/${selectedYear}`),
       ]);
 
       const fiscalData = await fiscalRes.json();
       const settingsData = await settingsRes.json();
       const leadsData = await leadsRes.json();
+      const holidaysData = await holidaysRes.json();
 
       setFiscalRules(fiscalData);
       setSettings(settingsData);
       setLeads(leadsData);
+      setHolidays(holidaysData.holidays || []);
     } catch (error) {
       toast.error('Eroare la încărcarea datelor');
     } finally {
