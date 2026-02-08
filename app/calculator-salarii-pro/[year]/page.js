@@ -52,17 +52,35 @@ function SalaryCalculatorContent() {
 
   // Load from URL params or localStorage on mount
   useEffect(() => {
-    // Try URL params first
-    const urlValue = searchParams.get('value');
+    // Try URL params first - suportăm ambele formate (vechi și nou)
+    const urlValue = searchParams.get('value') || searchParams.get('brut');
     const urlType = searchParams.get('type');
     const urlSector = searchParams.get('sector');
     const urlCurrency = searchParams.get('currency');
+    const urlYear = searchParams.get('an');
+    const urlMonth = searchParams.get('luna');
+    const urlChildren = searchParams.get('copii');
+    const urlDependents = searchParams.get('persoane');
+    const urlTickets = searchParams.get('tichete');
+    const urlDays = searchParams.get('zile');
+    const urlBasicFunc = searchParams.get('functie_baza');
+    const urlYouth = searchParams.get('tanar');
+    const urlHandicap = searchParams.get('handicap');
     
     if (urlValue) {
       setInputValue(urlValue);
       if (urlType) setCalculationType(urlType);
       if (urlSector) setSector(urlSector);
       if (urlCurrency) setCurrency(urlCurrency);
+      if (urlYear) setSelectedYear(parseInt(urlYear));
+      if (urlMonth) setSelectedMonth(parseInt(urlMonth));
+      if (urlChildren) setChildren(urlChildren);
+      if (urlDependents) setDependents(urlDependents);
+      if (urlTickets) setMealVouchers(urlTickets);
+      if (urlDays) setVoucherDays(urlDays);
+      if (urlBasicFunc === '0') setIsBasicFunction(false);
+      if (urlYouth === '1') setIsYouthExempt(true);
+      if (urlHandicap === '1') setIsTaxExempt(true);
     } else {
       // Try localStorage
       const saved = loadFromStorage('salary_calculator');
@@ -95,14 +113,17 @@ function SalaryCalculatorContent() {
     }
   }, [inputValue, calculationType, sector, dependents, children, mealVouchers, voucherDays, currency, loading]);
 
+  // Încarcă regulile fiscale când anul URL sau anul selectat se schimbă
   useEffect(() => {
     loadFiscalRules();
     loadExchangeRate();
-  }, [year]);
+  }, [year, selectedYear]);
 
   const loadFiscalRules = async () => {
     try {
-      const response = await fetch(`/api/fiscal-rules/${year}`);
+      // Folosește anul selectat din dropdown (dacă e diferit) sau anul din URL
+      const targetYear = selectedYear || year;
+      const response = await fetch(`/api/fiscal-rules/${targetYear}`);
       const data = await response.json();
       setFiscalRules(data);
       
