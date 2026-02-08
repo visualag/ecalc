@@ -200,8 +200,8 @@ try {
             ))}
           </div>
         </div>
-      </main>
-              {/* FABRICA DE LINK-URI DINAMICE - GOOGLE MAGNET */}
+
+                            {/* FABRICA DE LINK-URI DINAMICE - GOOGLE MAGNET */}
 {nearbyPlaces.length > 0 && (
   <div className="mt-12 p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 shadow-inner">
     <h3 className="text-center text-xs font-black text-blue-400 uppercase tracking-widest mb-6">
@@ -220,6 +220,10 @@ try {
     </div>
   </div>
 )}
+
+  
+      </main>
+
       <Footer />
     </div>
   );
