@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin-pro/'],
+      disallow: '/admin-pro/',
     },
     sitemap: 'https://ecalc.ro/sitemap.xml',
   }
