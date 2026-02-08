@@ -5,7 +5,6 @@ import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer'; 
 import { CloudSun, Wind, Droplets, Sun, Eye, Gauge, Umbrella, Thermometer } from 'lucide-react';
 
-const [nearbyPlaces, setNearbyPlaces] = useState([]);
 const ORASE_PRINCIPALE = [
   'Alba Iulia', 'Alexandria', 'Arad', 'Bacau', 'Baia Mare', 'Bistrita', 'Botosani', 'Braila', 'Brasov', 'Bucuresti',
   'Buzau', 'Calarasi', 'Cluj-Napoca', 'Constanta', 'Craiova', 'Deva', 'Drobeta-Turnu Severin', 'Focsani', 'Galati', 'Giurgiu',
@@ -30,6 +29,7 @@ export default function WeatherCityPage() {
   const [cityInput, setCityInput] = useState('');
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
 
   const fetchWeather = async (cityName) => {
     if (!cityName) return;
