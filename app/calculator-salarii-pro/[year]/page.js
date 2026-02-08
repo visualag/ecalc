@@ -739,6 +739,12 @@ function SalaryCalculatorContent() {
                             <span className="text-slate-600">Salariu Brut:</span>
                             <span className="font-bold">{result.gross.toFixed(2)} RON</span>
                           </div>
+                          {result.untaxedAmount > 0 && (
+                            <div className="flex justify-between text-blue-600 text-sm">
+                              <span>Sumă netaxabilă (scăzută din baza de calcul):</span>
+                              <span>-{result.untaxedAmount.toFixed(2)} RON</span>
+                            </div>
+                          )}
                           <div className="flex justify-between text-red-600">
                             <span>- CAS ({fiscalRules?.salary?.cas_rate || 25}%):</span>
                             <span>-{result.cas.toFixed(2)} RON</span>
