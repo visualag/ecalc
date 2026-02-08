@@ -630,6 +630,64 @@ async function handleLogin(request, db) {
   }
 }
 
+// GET /api/holidays/:year
+async function handleHolidaysGet(db, year) {
+  try {
+    const holidaysCollection = db.collection('holidays');
+    const holidayData = await holidaysCollection.findOne({ year: parseInt(year) });
+    
+    if (holidayData) {
+      return NextResponse.json({ 
+        year: parseInt(year),
+        holidays: holidayData.holidays || [],
+        lastUpdated: holidayData.lastUpdated
+      });
+    }
+    
+    // Returnează array gol dacă nu există date (se vor folosi datele default din frontend)
+    return NextResponse.json({ 
+      year: parseInt(year),
+      holidays: [],
+      message: 'No custom holidays found, using defaults'
+    });
+  } catch (error) {
+    console.error('Error fetching holidays:', error);
+    return NextResponse.json({ error: 'Eroare' }, { status: 500 });
+  }
+}
+
+// PUT /api/holidays/:year
+async function handleHolidaysPut(request, db, year) {
+  try {
+    const body = await request.json();
+    const { holidays } = body;
+    
+    const holidaysCollection = db.collection('holidays');
+    
+    await holidaysCollection.updateOne(
+      { year: parseInt(year) },
+      { 
+        $set: { 
+          year: parseInt(year),
+          holidays: holidays,
+          lastUpdated: new Date().toISOString()
+        } 
+      },
+      { upsert: true }
+    );
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: `Zilele libere pentru ${year} au fost actualizate`,
+      year: parseInt(year),
+      holidays: holidays
+    });
+  } catch (error) {
+    console.error('Error updating holidays:', error);
+    return NextResponse.json({ error: 'Eroare la salvare' }, { status: 500 });
+  }
+}
+
 // GET /api/settings
 async function handleSettingsGet(db) {
   try {
