@@ -88,23 +88,24 @@ export default function Home() {
   const [userWeather, setUserWeather] = useState(null);
 
   useEffect(() => {
-    async function getLocalWeather() {
-      try {
-        const ipRes = await fetch('https://ipapi.co/json/');
-        const ipData = await ipRes.json();
-        const city = ipData.city || 'Bucuresti';
-        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipData.latitude}&longitude=${ipData.longitude}&current=temperature_2m,is_day&timezone=auto`);
-        const weatherData = await weatherRes.json();
-        setUserWeather({
-          city: city,
-          temp: Math.round(weatherData.current.temperature_2m),
-          isDay: weatherData.current.is_day,
-          slug: city.toLowerCase().replace(/\s+/g, '-')
-        });
-      } catch (err) { console.error(err); }
-    }
-    getLocalWeather();
-  }, []);
+    async function getLocalWeather() {
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        const ipData = await ipRes.json();
+        if (!ipData.latitude) return;
+        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipData.latitude}&longitude=${ipData.longitude}&current=temperature_2m,is_day&timezone=auto`);
+        const weatherData = await weatherRes.json();
+        setUserWeather({
+          city: ipData.city || 'Bucuresti',
+          temp: Math.round(weatherData.current.temperature_2m),
+          isDay: weatherData.current.is_day,
+          slug: (ipData.city || 'Bucuresti').toLowerCase().replace(/\s+/g, '-')
+        });
+      } catch (err) { console.error(err); }
+    }
+    const timer = setTimeout(getLocalWeather, 1000); // Executăm la 1s după load
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -118,7 +119,7 @@ export default function Home() {
                 <Calculator className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">eCalc.ro</h1>
+                <p className="text-xl font-bold text-white">eCalc.ro</p>
                 <p className="text-xs text-slate-400">Calculatoare Fiscale Profesionale</p>
               </div>
             </div>
@@ -255,12 +256,12 @@ export default function Home() {
             <Star className="h-4 w-4" />
             Actualizat pentru {currentYear}
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
             Calculatoare Fiscale
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
               Profesionale România
             </span>
-          </h2>
+          </h1>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto mb-8">
             Platforma completă pentru calcule fiscale, comparații forme juridice, 
             simulări credit și analiza drepturilor - conformă cu legislația {currentYear}
