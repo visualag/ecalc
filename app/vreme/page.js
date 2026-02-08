@@ -4,6 +4,7 @@ import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer'; 
 import { CloudSun, Wind, Droplets, Sun } from 'lucide-react';
 
+const currentYear = new Date().getFullYear();
 const ORASE_PRINCIPALE = [
   'Bucuresti', 'Cluj-Napoca', 'Timisoara', 'Iasi', 'Constanta', 
   'Craiova', 'Brasov', 'Galati', 'Ploiesti', 'Oradea', 'Braila', 'Arad'
