@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Users, DollarSign, Lock, Megaphone, Calculator, Save, RefreshCw, ExternalLink, Info } from 'lucide-react';
+import { Settings, Users, DollarSign, Lock, Megaphone, Calculator, Save, RefreshCw, ExternalLink, Info, Calendar, Plus, Trash2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
