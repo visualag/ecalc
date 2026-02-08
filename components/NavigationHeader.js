@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const currentYear = 2026;
+const currentYear = new Date().getFullYear();
 
 const calculators = [
   { name: 'Salarii PRO', href: `/calculator-salarii-pro/${currentYear}`, icon: Calculator, color: 'text-blue-500' },
