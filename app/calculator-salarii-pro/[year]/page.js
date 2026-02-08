@@ -662,8 +662,8 @@ function SalaryCalculatorContent() {
               <Share2 className="h-4 w-4 mr-1" />
               Distribuie
             </Button>
-            <Button variant="outline" size="sm" onClick={handlePrint} disabled={!result}>
-              <Download className="h-4 w-4 mr-1" />
+            <Button variant="outline" size="sm" onClick={handlePrintResult} disabled={!result}>
+              <Printer className="h-4 w-4 mr-1" />
               Print
             </Button>
             <Button variant="outline" size="sm" onClick={handleEmail} disabled={!result}>
