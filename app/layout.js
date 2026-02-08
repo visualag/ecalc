@@ -1,6 +1,8 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
+import NavigationHeader from '@/components/NavigationHeader';
+import Footer from '@/components/Footer';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
@@ -26,7 +28,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ro">
-      <body className={inter.className}>
+      <head>
+        {/* Adăugat strict pentru scor 100 Best Practices conform PDF */}
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="upgrade-insecure-requests; block-all-mixed-content"
+        />
+      </head>
+      <body className={`${inter.className} antialiased bg-slate-50 flex flex-col min-h-screen text-slate-900`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -48,7 +57,11 @@ export default function RootLayout({ children }) {
             }),
           }}
         />
-        {children}
+        <NavigationHeader />
+        <main className="flex-grow">
+          {children}
+        </main>
+        <Footer />
         <Toaster />
       </body>
     </html>
