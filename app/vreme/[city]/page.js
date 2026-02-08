@@ -3,7 +3,19 @@ import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer'; 
 import WeatherView from './WeatherView';
 
-const ORASE_PRINCIPALE = ['Alba Iulia', 'Alexandria', 'Arad', 'Bacau', 'Baia Mare', 'Bistrita', 'Botosani', 'Braila', 'Brasov', 'Bucuresti', 'Buzau', 'Calarasi', 'Cluj-Napoca', 'Constanta', 'Craiova', 'Deva', 'Drobeta-Turnu Severin', 'Focsani', 'Galati', 'Giurgiu', 'Iasi', 'Miercurea Ciuc', 'Oradea', 'Piatra Neamt', 'Pitesti', 'Ploiesti', 'Ramnicu Valcea', 'Resita', 'Satu Mare', 'Sfantu Gheorghe', 'Sibiu', 'Slatina', 'Slobozia', 'Suceava', 'Targoviste', 'Targu Jiu', 'Targu Mures', 'Timisoara', 'Tulcea', 'Vaslui', 'Zalau'].sort();
+const ORASE_PRINCIPALE = ['Alba Iulia', 'Alexandria', 'Arad', 'Bacau', 'Baia Mare', 'Bistrita', 'Botosani', 'Braila', 'Brasov', 'Bucuresti', 'Buzau', 'Calarasi', 'Cluj-Napoca', 'Constanta', 'Craiova', 'Deva', 'Drobeta-Turnu Severin', 'Focsani', 'Galati', 'Giurgiu', 'Iasi', 'Miercurea Ciuc', 'Oradea', 'Piatra Neamt', 'Pitesti', 'Ploiesti', 'Ramnicu Valcea', 'Resita', 'Satu Mare', 'Sfantu Gheorghe', 'Sibiu', 'Slatina', 'Sloozia', 'Suceava', 'Targoviste', 'Targu Jiu', 'Targu Mures', 'Timisoara', 'Tulcea', 'Vaslui', 'Zalau'].sort();
+
+// SEO: Generam titlu si descriere unica pentru fiecare oras/sat
+export async function generateMetadata({ params }) {
+  const city = params.city.charAt(0).toUpperCase() + params.city.slice(1).replace(/-/g, ' ');
+  return {
+    title: `Vremea in ${city} - Prognoza Meteo Detaliata 2026`,
+    description: `Afla starea vremii in ${city}. Temperatura reala, sanse de precipitatii si prognoza pe 14 zile. Date actualizate pentru ${city}.`,
+    alternates: {
+      canonical: `https://ecalc.ro/vreme/${params.city}`,
+    },
+  };
+}
 
 async function getWeatherData(cityName) {
   try {
@@ -26,7 +38,16 @@ async function getWeatherData(cityName) {
 
 export default async function Page({ params }) {
   const data = await getWeatherData(params.city);
-  if (!data) return <div className="p-20 text-center font-bold font-sans">Locație negăsită.</div>;
+  
+  if (!data) return (
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] font-sans">
+      <NavigationHeader />
+      <main className="flex-grow flex items-center justify-center">
+        <h1 className="text-xl font-bold">Locatie negasita.</h1>
+      </main>
+      <Footer />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] font-sans">
