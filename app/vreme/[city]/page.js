@@ -5,6 +5,7 @@ import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer'; 
 import { CloudSun, Wind, Droplets, Sun, Eye, Gauge, Umbrella, Thermometer } from 'lucide-react';
 
+const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure,visibility&hourly=pm10,pm2_5&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=14`);
 const ORASE_PRINCIPALE = [
   'Alba Iulia', 'Alexandria', 'Arad', 'Bacau', 'Baia Mare', 'Bistrita', 'Botosani', 'Braila', 'Brasov', 'Bucuresti',
   'Buzau', 'Calarasi', 'Cluj-Napoca', 'Constanta', 'Craiova', 'Deva', 'Drobeta-Turnu Severin', 'Focsani', 'Galati', 'Giurgiu',
@@ -82,29 +83,56 @@ export default function WeatherCityPage() {
                 <CloudSun className="absolute right-[-20px] bottom-[-20px] h-64 w-64 opacity-10" />
               </div>
 
-              <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  { l: 'Vant', v: `${weather.current.wind_speed_10m}km/h`, i: Wind, c: 'text-blue-500' },
-                  { l: 'Umiditate', v: `${weather.current.relative_humidity_2m}%`, i: Droplets, c: 'text-cyan-500' },
-                  { l: 'UV Max', v: weather.daily.uv_index_max[0], i: Sun, c: 'text-orange-500' },
-                  { l: 'Presiune', v: `${Math.round(weather.current.surface_pressure)}`, i: Gauge, c: 'text-slate-500' },
-                  { l: 'Vizibilitate', v: `${weather.current.visibility / 1000}km`, i: Eye, c: 'text-emerald-500' },
-                  { l: 'Șanse Ploaie', v: `${weather.daily.precipitation_probability_max[0]}%`, i: Umbrella, c: 'text-indigo-500' },
-                ].map((item, i) => (
-                  <div key={i} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
-                    <item.i className={`h-5 w-5 ${item.c} mb-1`} />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.l}</span>
-                    <span className="text-sm font-black text-slate-800">{item.v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+             {/* Dashboard Indicatori - Design Dens */}
+<div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2">
+  {[
+    { l: 'Vânt', v: `${weather.current.wind_speed_10m} km/h`, i: Wind, c: 'text-blue-500' },
+    { l: 'Umiditate', v: `${weather.current.relative_humidity_2m}%`, i: Droplets, c: 'text-cyan-500' },
+    { l: 'UV Max', v: weather.daily.uv_index_max[0], i: Sun, c: 'text-orange-500' },
+    { l: 'Aer (AQI)', v: weather.hourly.pm10[0] > 50 ? 'Moderat' : 'Excelent', i: Gauge, c: 'text-emerald-500' }, // AQI adăugat
+    { l: 'Presiune', v: `${Math.round(weather.current.surface_pressure)} hPa`, i: Gauge, c: 'text-slate-500' },
+    { l: 'Vizibilitate', v: `${weather.current.visibility / 1000} km`, i: Eye, c: 'text-blue-400' },
+    { l: 'Șanse Ploaie', v: `${weather.daily.precipitation_probability_max[0]}%`, i: Umbrella, c: 'text-indigo-500' },
+    { l: 'Temp. Min', v: `${Math.round(weather.daily.temperature_2m_min[0])}°`, i: Thermometer, c: 'text-rose-400' },
+  ].map((item, i) => (
+    <div key={i} className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center hover:bg-blue-50/50 transition-colors">
+      <item.i className={`h-7 w-7 ${item.c} mb-1`} /> {/* Iconiță mărită */}
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-tight">{item.l}</span>
+      <span className="text-base font-black text-slate-900 leading-tight">{item.v}</span>
+    </div>
+  ))}
+</div>
 
-            {/* Evolutie 14 Zile - Ultra Compact 2 Randuri */}
-            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-              <h2 className="text-lg font-black text-slate-800 mb-6 px-2 border-l-4 border-blue-600 ml-2">Evoluție 14 zile</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                {weather.daily.time.map((date, index) => (
+{/* Evolutie 14 zile - Design Pro */}
+<div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+  <h2 className="text-lg font-black text-slate-800 mb-6 px-2 border-l-4 border-blue-600 ml-2">Prognoză Detaliată 14 zile</h2>
+  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+    {weather.daily.time.map((date, index) => (
+      <div key={date} className="bg-slate-50 p-4 rounded-3xl border border-transparent hover:border-blue-200 hover:bg-white transition-all text-center group">
+        <p className="text-[10px] font-black text-blue-600 uppercase mb-1">{new Date(date).toLocaleDateString('ro-RO', { weekday: 'short' })}</p>
+        <p className="text-[10px] text-slate-400 font-bold mb-3">{new Date(date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}</p>
+        
+        {/* Pictograme mai mari pentru starea vremii */}
+        <div className="flex justify-center mb-3">
+          <CloudSun className="h-10 w-10 text-blue-500 group-hover:scale-110 transition-transform" />
+        </div>
+
+        <div className="text-2xl font-black text-slate-900 leading-none">{Math.round(weather.daily.temperature_2m_max[index])}°</div>
+        <div className="text-xs font-bold text-slate-300 mb-3">{Math.round(weather.daily.temperature_2m_min[index])}°</div>
+        
+        <div className="space-y-1 bg-white p-2 rounded-xl border border-blue-50">
+          <div className="flex items-center justify-between text-[10px] font-bold text-blue-500">
+            <Umbrella className="h-3 w-3" />
+            <span>{weather.daily.precipitation_probability_max[index]}%</span>
+          </div>
+          <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+            <div className="bg-blue-400 h-full" style={{ width: `${weather.daily.precipitation_probability_max[index]}%` }}></div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
                   <div key={date} className="bg-slate-50 p-3 rounded-2xl border border-transparent hover:border-blue-200 hover:bg-white transition-all text-center">
                     <p className="text-[10px] font-black text-blue-600 uppercase leading-none mb-1">{new Date(date).toLocaleDateString('ro-RO', { weekday: 'short' })}</p>
                     <p className="text-[10px] text-slate-400 font-bold mb-3">{new Date(date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}</p>
