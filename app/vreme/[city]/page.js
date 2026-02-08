@@ -200,27 +200,29 @@ try {
             ))}
           </div>
         </div>
+{/* --- AICI AICI AICI PUNEM FABRICA --- */}
+        {nearbyPlaces.length > 0 && (
+          <div className="mt-12 p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 shadow-inner text-center">
+            <h3 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-6">
+              Vremea în alte localități din {weather.region}
+            </h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {nearbyPlaces.map((place) => (
+                <a 
+                  key={place.id} 
+                  href={`/vreme/${place.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="px-4 py-2 bg-white border border-blue-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl text-sm font-bold transition-all shadow-sm"
+                >
+                  Vremea in {place.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* --- SFARSIT FABRICA --- */}
 
-                            {/* FABRICA DE LINK-URI DINAMICE - GOOGLE MAGNET */}
-{nearbyPlaces.length > 0 && (
-  <div className="mt-12 p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 shadow-inner">
-    <h3 className="text-center text-xs font-black text-blue-400 uppercase tracking-widest mb-6">
-      Vremea în alte localități din {weather.region}
-    </h3>
-    <div className="flex flex-wrap justify-center gap-3">
-      {nearbyPlaces.map((place) => (
-        <a 
-          key={place.id} 
-          href={`/vreme/${place.name.toLowerCase().replace(/\s+/g, '-')}`}
-          className="px-4 py-2 bg-white border border-blue-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl text-sm font-bold transition-all shadow-sm"
-        >
-          Vremea in {place.name}
-        </a>
-      ))}
-    </div>
-  </div>
-)}
-
+</div> // Asta inchide <div className="space-y-6">
+    )} // Asta inchide {weather && (
   
       </main>
 
