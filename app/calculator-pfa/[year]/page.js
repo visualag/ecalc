@@ -16,6 +16,8 @@ import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
 import { saveToStorage, loadFromStorage, clearStorage } from '@/components/CalculatorLayout';
 import { generateGenericPDF } from '@/lib/pdf-export';
+const currentYear = new Date().getFullYear();
+
 
 export default function PFACalculatorPage() {
   const params = useParams();
