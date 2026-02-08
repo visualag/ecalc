@@ -1,29 +1,37 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Calculator, Download, Share2, Info, RotateCcw, Save } from 'lucide-react';
+import { Calculator, Download, Share2, Info, RotateCcw, Save, Mail, Calendar, Printer } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { SalaryCalculator, getBNRExchangeRate } from '@/lib/salary-calculator';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
 import { saveToStorage, loadFromStorage, clearStorage } from '@/components/CalculatorLayout';
 import { generateSalaryPDF } from '@/lib/pdf-export';
+import { defaultHolidays, calculateWorkingDays, calculateYearlyWorkingDays } from '@/lib/holidays-data';
 
 function SalaryCalculatorContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const year = parseInt(params?.year) || 2026;
+  const printRef = useRef(null);
   
   const [fiscalRules, setFiscalRules] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('calculator');
+  const [holidays, setHolidays] = useState([]);
+  const [yearlyData, setYearlyData] = useState(null);
   
-  // Inputs
+  // Inputs - EXTENDED pentru Calculator Avansat
+  const [selectedYear, setSelectedYear] = useState(year);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [calculationType, setCalculationType] = useState('brut-net');
   const [inputValue, setInputValue] = useState('');
   const [sector, setSector] = useState('standard');
@@ -31,10 +39,18 @@ function SalaryCalculatorContent() {
   const [children, setChildren] = useState('0');
   const [mealVouchers, setMealVouchers] = useState('0');
   const [voucherDays, setVoucherDays] = useState('22');
+  const [mealVoucherValue, setMealVoucherValue] = useState('40');
   const [isPartTime, setIsPartTime] = useState(false);
   const [isStudentOrPensioner, setIsStudentOrPensioner] = useState(false);
   const [currency, setCurrency] = useState('RON');
   const [exchangeRate, setExchangeRate] = useState(4.98);
+  
+  // NEW - Opțiuni Avansate
+  const [isBasicFunction, setIsBasicFunction] = useState(true); // Funcție de bază
+  const [age, setAge] = useState(30); // Pentru scutire < 26 ani
+  const [isYouthExempt, setIsYouthExempt] = useState(false); // < 26 ani
+  const [isTaxExempt, setIsTaxExempt] = useState(false); // Handicap/Scutit complet
+  const [showAdvanced, setShowAdvanced] = useState(false); // Toggle calcul avansat
   
   // Results
   const [result, setResult] = useState(null);
@@ -42,17 +58,35 @@ function SalaryCalculatorContent() {
 
   // Load from URL params or localStorage on mount
   useEffect(() => {
-    // Try URL params first
-    const urlValue = searchParams.get('value');
+    // Try URL params first - suportăm ambele formate (vechi și nou)
+    const urlValue = searchParams.get('value') || searchParams.get('brut');
     const urlType = searchParams.get('type');
     const urlSector = searchParams.get('sector');
     const urlCurrency = searchParams.get('currency');
+    const urlYear = searchParams.get('an');
+    const urlMonth = searchParams.get('luna');
+    const urlChildren = searchParams.get('copii');
+    const urlDependents = searchParams.get('persoane');
+    const urlTickets = searchParams.get('tichete');
+    const urlDays = searchParams.get('zile');
+    const urlBasicFunc = searchParams.get('functie_baza');
+    const urlYouth = searchParams.get('tanar');
+    const urlHandicap = searchParams.get('handicap');
     
     if (urlValue) {
       setInputValue(urlValue);
       if (urlType) setCalculationType(urlType);
       if (urlSector) setSector(urlSector);
       if (urlCurrency) setCurrency(urlCurrency);
+      if (urlYear) setSelectedYear(parseInt(urlYear));
+      if (urlMonth) setSelectedMonth(parseInt(urlMonth));
+      if (urlChildren) setChildren(urlChildren);
+      if (urlDependents) setDependents(urlDependents);
+      if (urlTickets) setMealVouchers(urlTickets);
+      if (urlDays) setVoucherDays(urlDays);
+      if (urlBasicFunc === '0') setIsBasicFunction(false);
+      if (urlYouth === '1') setIsYouthExempt(true);
+      if (urlHandicap === '1') setIsTaxExempt(true);
     } else {
       // Try localStorage
       const saved = loadFromStorage('salary_calculator');
@@ -85,16 +119,28 @@ function SalaryCalculatorContent() {
     }
   }, [inputValue, calculationType, sector, dependents, children, mealVouchers, voucherDays, currency, loading]);
 
+  // Încarcă regulile fiscale când anul URL sau anul selectat se schimbă
   useEffect(() => {
     loadFiscalRules();
     loadExchangeRate();
-  }, [year]);
+  }, [year, selectedYear]);
 
   const loadFiscalRules = async () => {
     try {
-      const response = await fetch(`/api/fiscal-rules/${year}`);
+      // Folosește anul selectat din dropdown (dacă e diferit) sau anul din URL
+      const targetYear = selectedYear || year;
+      const response = await fetch(`/api/fiscal-rules/${targetYear}`);
       const data = await response.json();
       setFiscalRules(data);
+      
+      // Set exchange rate from fiscal rules or fetch from BNR
+      if (data.exchange_rate?.auto_update !== false) {
+        const rate = await getBNRExchangeRate('EUR');
+        setExchangeRate(rate);
+      } else {
+        setExchangeRate(data.exchange_rate?.eur || 5.0923);
+      }
+      
       setLoading(false);
     } catch (error) {
       toast.error('Eroare la încărcarea regulilor fiscale');
@@ -103,8 +149,219 @@ function SalaryCalculatorContent() {
   };
 
   const loadExchangeRate = async () => {
-    const rate = await getBNRExchangeRate('EUR');
-    setExchangeRate(rate);
+    // This is now handled in loadFiscalRules
+    // Kept for backwards compatibility
+  };
+
+  // Încarcă zilele libere din API sau folosește valorile default
+  const loadHolidays = async () => {
+    try {
+      const targetYear = selectedYear || year;
+      const response = await fetch(`/api/holidays/${targetYear}`);
+      if (response.ok) {
+        const data = await response.json();
+        setHolidays(data.holidays || []);
+      } else {
+        // Folosește datele default dacă API-ul nu are date
+        setHolidays(defaultHolidays[targetYear] || []);
+      }
+    } catch (error) {
+      // Fallback la date default
+      const targetYear = selectedYear || year;
+      setHolidays(defaultHolidays[targetYear] || []);
+    }
+  };
+
+  // Calculează zilele lucratoare când se schimbă anul sau zilele libere
+  useEffect(() => {
+    loadHolidays();
+  }, [selectedYear, year]);
+
+  useEffect(() => {
+    if (holidays.length > 0 || defaultHolidays[selectedYear || year]) {
+      const targetYear = selectedYear || year;
+      const holidaysToUse = holidays.length > 0 ? holidays : (defaultHolidays[targetYear] || []);
+      const data = calculateYearlyWorkingDays(targetYear, holidaysToUse);
+      setYearlyData(data);
+    }
+  }, [holidays, selectedYear, year]);
+
+  // ============================================
+  // PRINT - DOAR REZULTATUL (A4/A5)
+  // ============================================
+  const handlePrintResult = () => {
+    if (!result) {
+      toast.error('Calculați mai întâi salariul pentru a printa');
+      return;
+    }
+
+    // Creează o fereastră nouă pentru printare
+    const printWindow = window.open('', '_blank');
+    const totalTaxes = result.cas + result.cass + result.incomeTax;
+    
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Calculator Salariu ${selectedYear || year} - Rezultate</title>
+        <style>
+          @page { size: A4; margin: 15mm; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 12pt;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
+          .header h1 { margin: 0; color: #2563eb; font-size: 20pt; }
+          .header p { margin: 5px 0; color: #64748b; font-size: 10pt; }
+          .section { margin-bottom: 20px; }
+          .section-title {
+            font-weight: bold;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dotted #e2e8f0;
+          }
+          .row.highlight { background: #f0f9ff; font-weight: bold; }
+          .row .label { color: #475569; }
+          .row .value { font-weight: 600; }
+          .row .value.green { color: #16a34a; }
+          .row .value.red { color: #dc2626; }
+          .row .value.blue { color: #2563eb; }
+          .big-result {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-radius: 10px;
+            margin: 20px 0;
+          }
+          .big-result .label { font-size: 12pt; opacity: 0.9; }
+          .big-result .value { font-size: 24pt; font-weight: bold; }
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            color: #94a3b8;
+            font-size: 9pt;
+          }
+          .tax-exempt { background: #dcfce7; padding: 10px; border-radius: 5px; margin: 10px 0; }
+          .tax-exempt strong { color: #166534; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>📊 Calculator Salariu ${selectedYear || year}</h1>
+          <p>Raport generat pe ${new Date().toLocaleDateString('ro-RO', { dateStyle: 'full' })}</p>
+          <p>Sector: ${sector === 'it' ? 'IT' : sector === 'construction' ? 'Construcții' : sector === 'agriculture' ? 'Agricultură' : 'Standard'}</p>
+        </div>
+
+        <div class="big-result">
+          <div class="label">SALARIU NET</div>
+          <div class="value">${result.net.toFixed(2)} RON</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">💰 Detalii Calcul</div>
+          <div class="row">
+            <span class="label">Salariu Brut:</span>
+            <span class="value">${result.gross.toFixed(2)} RON</span>
+          </div>
+          ${result.untaxedAmount > 0 ? `
+          <div class="row">
+            <span class="label">Sumă netaxabilă:</span>
+            <span class="value blue">-${result.untaxedAmount.toFixed(2)} RON</span>
+          </div>
+          ` : ''}
+          <div class="row">
+            <span class="label">CAS (${fiscalRules?.salary?.cas_rate || 25}%):</span>
+            <span class="value red">-${result.cas.toFixed(2)} RON</span>
+          </div>
+          <div class="row">
+            <span class="label">CASS (${fiscalRules?.salary?.cass_rate || 10}%):</span>
+            <span class="value red">-${result.cass.toFixed(2)} RON</span>
+          </div>
+          ${result.personalDeduction > 0 ? `
+          <div class="row">
+            <span class="label">Deducere personală:</span>
+            <span class="value green">${result.personalDeduction.toFixed(2)} RON</span>
+          </div>
+          ` : ''}
+          ${result.childDeduction > 0 ? `
+          <div class="row">
+            <span class="label">Deducere copii (${parseInt(children) || 0} pers.):</span>
+            <span class="value green">${result.childDeduction.toFixed(2)} RON</span>
+          </div>
+          ` : ''}
+          <div class="row">
+            <span class="label">Impozit pe Venit (${fiscalRules?.salary?.income_tax_rate || 10}%):</span>
+            <span class="value red">-${result.incomeTax.toFixed(2)} RON</span>
+          </div>
+          ${result.voucherValue > 0 ? `
+          <div class="row">
+            <span class="label">Tichete de masă:</span>
+            <span class="value green">+${result.voucherValue.toFixed(2)} RON</span>
+          </div>
+          ` : ''}
+        </div>
+
+        ${result.taxExemptReason ? `
+        <div class="tax-exempt">
+          <strong>✅ Facilitate fiscală:</strong> ${result.taxExemptReason}
+        </div>
+        ` : ''}
+
+        <div class="section">
+          <div class="section-title">📈 Rezumat</div>
+          <div class="row highlight">
+            <span class="label">Total Taxe Angajat:</span>
+            <span class="value red">${totalTaxes.toFixed(2)} RON</span>
+          </div>
+          <div class="row">
+            <span class="label">CAM (Angajator):</span>
+            <span class="value">${result.cam.toFixed(2)} RON</span>
+          </div>
+          <div class="row highlight">
+            <span class="label">Cost Total Angajator:</span>
+            <span class="value blue">${result.totalCost.toFixed(2)} RON</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Generat de eCalc.ro - Calculator Salarii Profesional</p>
+          <p>Link: ${window.location.href}</p>
+          <p>Acest document are scop informativ. Pentru calcule oficiale, consultați un specialist.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Așteaptă încărcarea și printează
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+    
+    toast.success('Documentul pentru printare a fost generat');
   };
 
   const calculate = () => {
@@ -117,12 +374,21 @@ function SalaryCalculatorContent() {
     const value = parseFloat(inputValue);
     const valueInRON = currency === 'EUR' ? value * exchangeRate : value;
     
+    // Opțiuni complete cu toate facilitățile avansate
+    // IMPORTANT: Verificăm explicit dacă mealVouchers este setat (chiar și 0)
+    const mealVouchersValue = mealVouchers !== '' && mealVouchers !== null && mealVouchers !== undefined 
+      ? parseFloat(mealVouchers) 
+      : 0;
+    
     const options = {
       dependents: parseInt(dependents) || 0,
       children: parseInt(children) || 0,
-      mealVouchers: parseFloat(mealVouchers) || 0,
+      mealVouchers: mealVouchersValue,
       voucherDays: parseInt(voucherDays) || 22,
       isStudentOrPensioner,
+      // OPȚIUNI AVANSATE
+      isBasicFunction, // Pentru deducere personală (doar cu funcție de bază)
+      age: isYouthExempt ? 25 : 30, // Sub 26 = scutire IV
     };
 
     let calcResult;
@@ -149,12 +415,96 @@ function SalaryCalculatorContent() {
       calcResult = calculator.calculateCostToNet(valueInRON, sector, options);
     }
 
+    // ============================================
+    // PRIORITATE SCUTIRI - RECALCULARE IMPOZIT
+    // ============================================
+    
+    // 1. PRIORITATE #1: Scutire TOTALĂ Handicap (isTaxExempt = true)
+    if (isTaxExempt && fiscalRules?.salary?.disability_tax_exempt !== false) {
+      // Forțăm impozit = 0 și recalculăm NET-ul
+      const previousTax = calcResult.incomeTax;
+      calcResult.incomeTax = 0;
+      calcResult.net = calcResult.net + previousTax;
+      calcResult.taxExemptReason = 'Scutire IV - Persoană cu handicap';
+      calcResult.exemptAmount = calcResult.gross;
+    }
+    // 2. PRIORITATE #2: Scutire Tineri < 26 ani (până la prag)
+    else if (isYouthExempt && fiscalRules?.salary?.youth_exemption_enabled !== false) {
+      const youthThreshold = fiscalRules?.salary?.youth_exemption_threshold || 6050;
+      if (valueInRON <= youthThreshold) {
+        // Scutire totală IV pentru tineri sub 26 ani și sub prag
+        const previousTax = calcResult.incomeTax;
+        calcResult.incomeTax = 0;
+        calcResult.net = calcResult.net + previousTax;
+        calcResult.taxExemptReason = `Scutire IV - Tânăr sub 26 ani (venit ≤ ${youthThreshold} RON)`;
+        calcResult.exemptAmount = valueInRON;
+      } else {
+        // Partial scutit - doar partea peste prag este impozitată
+        // (deja calculat în calculateStandard cu youthDeduction)
+        calcResult.taxExemptReason = `Scutire parțială - Tânăr sub 26 ani (venit > ${youthThreshold} RON)`;
+      }
+    }
+    
+    // 3. Dacă NU este funcție de bază, deducerea personală = 0 (deja gestionat în calculator)
+    if (!isBasicFunction) {
+      calcResult.noBasicFunctionNote = 'Deducerea personală nu se aplică (nu este funcție de bază)';
+    }
+
     setResult(calcResult);
     
+    // Actualizare URL pentru SEO (URL dinamic)
+    updateURLParams(valueInRON);
+    
     // Load 2025 for comparison
-    if (year === 2026) {
+    if (selectedYear === 2026 || year === 2026) {
       load2025Comparison(valueInRON, options);
     }
+  };
+  
+  // ============================================
+  // URL DINAMIC - SEO POWER
+  // ============================================
+  const updateURLParams = (grossValue) => {
+    const params = new URLSearchParams();
+    
+    // Parametri principali
+    params.set('brut', Math.round(grossValue).toString());
+    params.set('an', selectedYear.toString());
+    params.set('luna', selectedMonth.toString());
+    
+    // Sector
+    if (sector !== 'standard') {
+      params.set('sector', sector);
+    }
+    
+    // Copii și dependenți
+    if (parseInt(children) > 0) {
+      params.set('copii', children);
+    }
+    if (parseInt(dependents) > 0) {
+      params.set('persoane', dependents);
+    }
+    
+    // Tichete
+    if (parseFloat(mealVouchers) > 0 || parseFloat(mealVoucherValue) > 0) {
+      params.set('tichete', mealVouchers || mealVoucherValue);
+      params.set('zile', voucherDays);
+    }
+    
+    // Facilități avansate
+    if (!isBasicFunction) {
+      params.set('functie_baza', '0');
+    }
+    if (isYouthExempt) {
+      params.set('tanar', '1');
+    }
+    if (isTaxExempt) {
+      params.set('handicap', '1');
+    }
+    
+    // Actualizare URL fără reload
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
   };
 
   const load2025Comparison = async (valueInRON, options) => {
@@ -213,6 +563,54 @@ function SalaryCalculatorContent() {
     }
   };
 
+  // ============================================
+  // EXPORT - PRINT PDF (DOAR REZULTATUL - A4/A5)
+  // ============================================
+  // Funcția handlePrintResult este definită mai sus după loadHolidays
+
+  // ============================================
+  // EXPORT - EMAIL REZULTATE
+  // ============================================
+  const handleEmail = () => {
+    if (!result) {
+      toast.error('Calculați mai întâi salariul');
+      return;
+    }
+
+    const subject = encodeURIComponent(`Calculator Salariu ${selectedYear} - Rezultate`);
+    const totalTaxes = result.cas + result.cass + result.incomeTax;
+    
+    let bodyText = `CALCULATOR SALARIU ${selectedYear} - REZULTATE\n`;
+    bodyText += `====================================\n\n`;
+    bodyText += `📊 SALARIU BRUT: ${result.gross.toFixed(2)} RON\n`;
+    bodyText += `💰 SALARIU NET: ${result.net.toFixed(2)} RON\n`;
+    bodyText += `📉 TOTAL TAXE ANGAJAT: ${totalTaxes.toFixed(2)} RON\n\n`;
+    bodyText += `DETALII TAXE:\n`;
+    bodyText += `- CAS (Pensii): ${result.cas.toFixed(2)} RON\n`;
+    bodyText += `- CASS (Sănătate): ${result.cass.toFixed(2)} RON\n`;
+    bodyText += `- Impozit pe Venit: ${result.incomeTax.toFixed(2)} RON\n\n`;
+    
+    if (result.personalDeduction > 0) {
+      bodyText += `✅ Deducere personală: ${result.personalDeduction.toFixed(2)} RON\n`;
+    }
+    if (result.childDeduction > 0) {
+      bodyText += `✅ Deducere copii: ${result.childDeduction.toFixed(2)} RON\n`;
+    }
+    if (result.taxExemptReason) {
+      bodyText += `✅ ${result.taxExemptReason}\n`;
+    }
+    
+    bodyText += `\n💼 COST TOTAL ANGAJATOR: ${result.totalCost.toFixed(2)} RON\n`;
+    bodyText += `\n====================================\n`;
+    bodyText += `Calculat pe eCalc.ro - ${new Date().toLocaleDateString('ro-RO')}\n`;
+    bodyText += `Link: ${window.location.href}`;
+    
+    const body = encodeURIComponent(bodyText);
+    
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    toast.success('Clientul de email a fost deschis');
+  };
+
   const resetForm = () => {
     setInputValue('');
     setCalculationType('brut-net');
@@ -252,7 +650,7 @@ function SalaryCalculatorContent() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {year}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Calculator Salarii Profesional {selectedYear || year}</h1>
             <p className="text-sm text-slate-600">Toate facilitățile fiscale • Calcul în 3 direcții</p>
           </div>
           <div className="flex gap-2">
@@ -264,6 +662,14 @@ function SalaryCalculatorContent() {
               <Share2 className="h-4 w-4 mr-1" />
               Distribuie
             </Button>
+            <Button variant="outline" size="sm" onClick={handlePrintResult} disabled={!result}>
+              <Printer className="h-4 w-4 mr-1" />
+              Print
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleEmail} disabled={!result}>
+              <Mail className="h-4 w-4 mr-1" />
+              Email
+            </Button>
             <Button variant="outline" size="sm" onClick={downloadPDF}>
               <Download className="h-4 w-4 mr-1" />
               PDF
@@ -271,7 +677,26 @@ function SalaryCalculatorContent() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        {/* Tab-uri pentru Navigator */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+            <TabsTrigger value="calculator">
+              <Calculator className="h-4 w-4 mr-2" />
+              Calculator
+            </TabsTrigger>
+            <TabsTrigger value="zile-lucratoare">
+              <Calendar className="h-4 w-4 mr-2" />
+              Zile Lucratoare
+            </TabsTrigger>
+            <TabsTrigger value="zile-libere">
+              <Calendar className="h-4 w-4 mr-2" />
+              Zile Libere
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB: CALCULATOR */}
+          <TabsContent value="calculator" className="mt-6">
+            <div className="grid lg:grid-cols-3 gap-6">
           {/* Input Panel */}
           <div className="lg:col-span-1">
             <Card>
@@ -408,6 +833,108 @@ function SalaryCalculatorContent() {
                   )}
                 </div>
 
+                {/* Calculator Avansat - Toggle */}
+                <div className="border-t pt-4">
+                  <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="w-full flex items-center justify-between text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                  >
+                    <span>⚙️ Calcul Avansat</span>
+                    <span className="text-xs">{showAdvanced ? '▲ Ascunde' : '▼ Arată'}</span>
+                  </button>
+                  
+                  {showAdvanced && (
+                    <div className="space-y-4 mt-4 pt-4 border-t">
+                      {/* Selectoare An & Lună */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">An Fiscal</Label>
+                          <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 16 }, (_, i) => 2015 + i).map(y => (
+                                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Lună</Label>
+                          <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Noi', 'Dec'].map((m, i) => (
+                                <SelectItem key={i + 1} value={(i + 1).toString()}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Buton Salariu Minim */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInputValue(fiscalRules?.salary?.minimum_salary?.toString() || '4050')}
+                        className="w-full"
+                      >
+                        📊 Completează cu Salariu Minim ({fiscalRules?.salary?.minimum_salary || 4050} RON)
+                      </Button>
+
+                      {/* Bife Facilitați */}
+                      <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
+                        <p className="text-xs font-semibold text-slate-700 mb-2">Facilități & Scutiri:</p>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="basicFunction"
+                            checked={isBasicFunction}
+                            onChange={(e) => setIsBasicFunction(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="basicFunction" className="text-sm cursor-pointer">
+                            ✓ Funcție de bază (pentru deducere personală)
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="youthExempt"
+                            checked={isYouthExempt}
+                            onChange={(e) => {
+                              setIsYouthExempt(e.target.checked);
+                              if (e.target.checked) setAge(25); else setAge(30);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="youthExempt" className="text-sm cursor-pointer">
+                            👤 Vârstă sub 26 ani (scutire IV până la {fiscalRules?.salary?.youth_exemption_threshold || 6050} RON)
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="taxExempt"
+                            checked={isTaxExempt}
+                            onChange={(e) => setIsTaxExempt(e.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="taxExempt" className="text-sm cursor-pointer">
+                            ♿ Persoană cu handicap (scutire TOTALĂ IV)
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <Button onClick={calculate} className="w-full" size="lg">
                   <Calculator className="h-4 w-4 mr-2" />
                   Calculează
@@ -423,7 +950,7 @@ function SalaryCalculatorContent() {
                 {/* Main Results */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Rezultate {year}</CardTitle>
+                    <CardTitle>Rezultate {selectedYear || year}</CardTitle>
                     <CardDescription>
                       {sector === 'it' && 'Sector IT - Scutire impozit până la 10.000 RON'}
                       {sector === 'construction' && 'Sector Construcții - CAS redus 21.25%'}
@@ -441,6 +968,12 @@ function SalaryCalculatorContent() {
                             <span className="text-slate-600">Salariu Brut:</span>
                             <span className="font-bold">{result.gross.toFixed(2)} RON</span>
                           </div>
+                          {result.untaxedAmount > 0 && (
+                            <div className="flex justify-between text-blue-600 text-sm">
+                              <span>Sumă netaxabilă (scăzută din baza de calcul):</span>
+                              <span>-{result.untaxedAmount.toFixed(2)} RON</span>
+                            </div>
+                          )}
                           <div className="flex justify-between text-red-600">
                             <span>- CAS ({fiscalRules?.salary?.cas_rate || 25}%):</span>
                             <span>-{result.cas.toFixed(2)} RON</span>
@@ -451,8 +984,20 @@ function SalaryCalculatorContent() {
                           </div>
                           {result.personalDeduction > 0 && (
                             <div className="flex justify-between text-green-600">
-                              <span>Deducere personală:</span>
+                              <span>Deducere personală (bază):</span>
                               <span>{result.personalDeduction.toFixed(2)} RON</span>
+                            </div>
+                          )}
+                          {result.childDeduction > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>Deducere copii ({parseInt(children) || 0} x {fiscalRules?.salary?.child_deduction || 100} RON):</span>
+                              <span>{result.childDeduction.toFixed(2)} RON</span>
+                            </div>
+                          )}
+                          {result.dependentDeduction > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>Deducere persoane întreținere:</span>
+                              <span>{result.dependentDeduction.toFixed(2)} RON</span>
                             </div>
                           )}
                           <div className="flex justify-between text-red-600">
@@ -528,6 +1073,33 @@ function SalaryCalculatorContent() {
                           <Info className="h-5 w-5 text-green-600 mt-0.5" />
                           <div className="text-sm text-green-800">
                             <strong>Facilitate fiscală activă:</strong> Scutire impozit pentru {result.exemptAmount.toFixed(2)} RON
+                            {result.taxExemptReason && (
+                              <span className="block mt-1 text-green-700">
+                                📋 {result.taxExemptReason}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {result.taxExemptReason && !result.exemptAmount && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div className="text-sm text-blue-800">
+                            <strong>Facilitate:</strong> {result.taxExemptReason}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {result.noBasicFunctionNote && (
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                        <div className="flex items-start gap-2">
+                          <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <div className="text-sm text-amber-800">
+                            <strong>Atenție:</strong> {result.noBasicFunctionNote}
                           </div>
                         </div>
                       </div>
@@ -543,6 +1115,121 @@ function SalaryCalculatorContent() {
                         </div>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Tax Breakdown with Visual Bar */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Total Taxe - Distribuție Stat vs Angajat</CardTitle>
+                    <CardDescription>Vizualizare procentuală a contribuțiilor</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Summary Table */}
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">Taxe Angajat</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {(result.cas + result.cass + result.incomeTax).toFixed(2)} RON
+                          </p>
+                          {currency === 'EUR' && (
+                            <p className="text-xs text-slate-500">
+                              {((result.cas + result.cass + result.incomeTax) / exchangeRate).toFixed(2)} EUR
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">Taxe Angajator</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {(result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)).toFixed(2)} RON
+                          </p>
+                          {currency === 'EUR' && (
+                            <p className="text-xs text-slate-500">
+                              {((result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / exchangeRate).toFixed(2)} EUR
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">Total Statul</p>
+                          <p className="text-2xl font-bold text-red-600">
+                            {(result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)).toFixed(2)} RON
+                          </p>
+                          {currency === 'EUR' && (
+                            <p className="text-xs text-slate-500">
+                              {((result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / exchangeRate).toFixed(2)} EUR
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Visual Bar */}
+                      <div className="space-y-2">
+                        <div className="flex h-12 rounded-lg overflow-hidden border border-slate-200">
+                          <div 
+                            className="bg-red-500 flex items-center justify-center text-white text-sm font-semibold transition-all"
+                            style={{ 
+                              width: `${((result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / result.totalCost * 100).toFixed(2)}%` 
+                            }}
+                          >
+                            {((result.cas + result.cass + result.incomeTax + result.cam + (result.employerExtraCAS || 0) + (result.employerExtraCASS || 0)) / result.totalCost * 100).toFixed(2)}% Stat
+                          </div>
+                          <div 
+                            className="bg-green-500 flex items-center justify-center text-white text-sm font-semibold transition-all"
+                            style={{ 
+                              width: `${(result.net / result.totalCost * 100).toFixed(2)}%` 
+                            }}
+                          >
+                            {(result.net / result.totalCost * 100).toFixed(2)}% Angajat
+                          </div>
+                        </div>
+                        <p className="text-xs text-center text-slate-600">
+                          Pentru a plăti un salariu net de <strong>{result.net.toFixed(2)} RON</strong>, angajatorul cheltuiește <strong>{result.totalCost.toFixed(2)} RON</strong>
+                        </p>
+                      </div>
+
+                      {/* Detailed Breakdown */}
+                      <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2 text-slate-700">Detalii Taxe Angajat:</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>CAS ({fiscalRules?.salary?.cas_rate || 25}%):</span>
+                              <span>{result.cas.toFixed(2)} RON</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>CASS ({fiscalRules?.salary?.cass_rate || 10}%):</span>
+                              <span>{result.cass.toFixed(2)} RON</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Impozit ({fiscalRules?.salary?.income_tax_rate || 10}%):</span>
+                              <span>{result.incomeTax.toFixed(2)} RON</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2 text-slate-700">Detalii Taxe Angajator:</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>CAM ({fiscalRules?.salary?.cam_rate || 2.25}%):</span>
+                              <span>{result.cam.toFixed(2)} RON</span>
+                            </div>
+                            {result.overtaxed && (
+                              <>
+                                <div className="flex justify-between text-orange-600">
+                                  <span>Extra CAS:</span>
+                                  <span>{result.employerExtraCAS?.toFixed(2)} RON</span>
+                                </div>
+                                <div className="flex justify-between text-orange-600">
+                                  <span>Extra CASS:</span>
+                                  <span>{result.employerExtraCASS?.toFixed(2)} RON</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -585,7 +1272,151 @@ function SalaryCalculatorContent() {
               </Card>
             )}
           </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          {/* TAB: ZILE LUCRATOARE */}
+          <TabsContent value="zile-lucratoare" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Zile Lucratoare {selectedYear || year}
+                </CardTitle>
+                <CardDescription>
+                  Calendar cu zilele lucratoare pe fiecare lună
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {yearlyData ? (
+                  <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-blue-50 rounded-lg p-4 text-center">
+                        <div className="text-3xl font-bold text-blue-600">{yearlyData.totalWorkingDays}</div>
+                        <div className="text-sm text-blue-700">Zile Lucratoare</div>
+                      </div>
+                      <div className="bg-red-50 rounded-lg p-4 text-center">
+                        <div className="text-3xl font-bold text-red-600">{yearlyData.totalHolidays}</div>
+                        <div className="text-sm text-red-700">Sărbători Legale</div>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-4 text-center">
+                        <div className="text-3xl font-bold text-slate-600">{yearlyData.totalWeekends}</div>
+                        <div className="text-sm text-slate-700">Zile Weekend</div>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-4 text-center">
+                        <div className="text-3xl font-bold text-green-600">{yearlyData.totalDays}</div>
+                        <div className="text-sm text-green-700">Total Zile {selectedYear || year}</div>
+                      </div>
+                    </div>
+
+                    {/* Monthly Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-slate-50">
+                            <th className="py-3 px-4 text-left font-semibold">Luna</th>
+                            <th className="py-3 px-4 text-center font-semibold">Zile Totale</th>
+                            <th className="py-3 px-4 text-center font-semibold text-blue-600">Zile Lucratoare</th>
+                            <th className="py-3 px-4 text-center font-semibold text-slate-600">Weekend</th>
+                            <th className="py-3 px-4 text-center font-semibold text-red-600">Sărbători</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {yearlyData.months.map((month) => (
+                            <tr key={month.month} className="border-b hover:bg-slate-50">
+                              <td className="py-3 px-4 font-medium">{month.name}</td>
+                              <td className="py-3 px-4 text-center">{month.totalDays}</td>
+                              <td className="py-3 px-4 text-center font-bold text-blue-600">{month.workingDays}</td>
+                              <td className="py-3 px-4 text-center text-slate-600">{month.weekendDays}</td>
+                              <td className="py-3 px-4 text-center text-red-600">{month.holidayDays}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-slate-100 font-bold">
+                            <td className="py-3 px-4">TOTAL {selectedYear || year}</td>
+                            <td className="py-3 px-4 text-center">{yearlyData.totalDays}</td>
+                            <td className="py-3 px-4 text-center text-blue-600">{yearlyData.totalWorkingDays}</td>
+                            <td className="py-3 px-4 text-center text-slate-600">{yearlyData.totalWeekends}</td>
+                            <td className="py-3 px-4 text-center text-red-600">{yearlyData.totalHolidays}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Se încarcă datele...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB: ZILE LIBERE */}
+          <TabsContent value="zile-libere" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-red-500" />
+                  Sărbători Legale {selectedYear || year}
+                </CardTitle>
+                <CardDescription>
+                  Lista completă a zilelor libere legale din România
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(holidays.length > 0 || defaultHolidays[selectedYear || year]) ? (
+                  <div className="space-y-4">
+                    <div className="grid gap-3">
+                      {(holidays.length > 0 ? holidays : defaultHolidays[selectedYear || year] || []).map((holiday, index) => {
+                        const date = new Date(holiday.date);
+                        const dayOfWeek = date.toLocaleDateString('ro-RO', { weekday: 'long' });
+                        const formattedDate = date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' });
+                        
+                        return (
+                          <div key={index} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+                            <div className="flex items-center gap-4">
+                              <div className="bg-red-500 text-white rounded-lg p-2 min-w-[60px] text-center">
+                                <div className="text-xl font-bold">{date.getDate()}</div>
+                                <div className="text-xs uppercase">{date.toLocaleDateString('ro-RO', { month: 'short' })}</div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-slate-900">{holiday.name}</div>
+                                <div className="text-sm text-slate-600">{dayOfWeek}, {formattedDate}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                holiday.type === 'legal' ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'
+                              }`}>
+                                {holiday.type === 'legal' ? 'Sărbătoare Legală' : 'Zi Liberă'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>💡 Notă:</strong> Zilele libere pot fi administrate din panoul de Admin. 
+                        Dacă o sărbătoare cade în weekend, angajatorul poate decide dacă acordă o zi liberă suplimentară.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Nu sunt configurate zile libere pentru {selectedYear || year}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
       <Footer />
     </div>
