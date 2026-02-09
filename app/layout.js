@@ -3,66 +3,91 @@ import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import NavigationHeader from '@/components/NavigationHeader';
 import Footer from '@/components/Footer';
-import ChatFloat from '@/components/ChatFloat';
+import { useState, useRef, useEffect } from 'react';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
-
-// Automatizarea anului - se schimbă singur la fiecare revelion
 const currentYear = new Date().getFullYear();
 
 export const metadata = {
   metadataBase: new URL('https://ecalc.ro'),
-  alternates: {
-    canonical: '/',
-  },
+  alternates: { canonical: '/' },
   title: {
-    // Titlul Magnet pentru Home Page cu an automat
     default: `Calculator Salarii ${currentYear} PRO - Brut la Net & PFA vs SRL | eCalc.ro`,
-    // Șablonul pentru paginile secundare
     template: `%s | eCalc.ro`
   },
-  description: `Sistem profesional de calcul fiscal ${currentYear}. Calculator Salarii Brut/Net, PFA, e-Factura, Impozit Auto și Rentabilitate Imobiliară. Actualizat la zi conform legislației din România.`,
-  // Keywords dinamice - includem și Vremea pe care ai adăugat-o
-  keywords: `calculator salariu ${currentYear}, brut net ${currentYear}, calculator pfa ${currentYear}, pfa vs srl, impozit auto ${currentYear}, e-factura romania, prognoza meteo, vremea azi, starea vremii romania, vremea la munte, vremea la mare, vremea litoral, vremea munte, vremea ski`,
+  description: `Sistem profesional de calcul fiscal ${currentYear}. Calculator Salarii Brut/Net, PFA, e-Factura, Impozit Auto și Rentabilitate Imobiliară.`,
+  keywords: `calculator salariu ${currentYear}, brut net, calculator pfa, pfa vs srl, impozit auto, e-factura, prognoza meteo`,
 };
+
+// Componenta de Chat definită direct aici ca să nu mai facem importuri care crapă
+function ChatFaraImport() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    const userMsg = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://ecalc.artgrup.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMsg].slice(-5) }),
+      });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let aiResponse = { role: 'assistant', content: '' };
+      setMessages(prev => [...prev, aiResponse]);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        aiResponse.content += decoder.decode(value);
+        setMessages(prev => [...prev.slice(0, -1), { ...aiResponse }]);
+      }
+    } catch (err) { console.error(err); } finally { setIsLoading(false); }
+  };
+
+  if (!isOpen) return (
+    <button onClick={() => setIsOpen(true)} style={{position:'fixed', bottom:'20px', right:'20px', backgroundColor:'#2563eb', color:'white', padding:'15px 25px', borderRadius:'50px', border:'none', fontWeight:'bold', cursor:'pointer', zIndex:9999, boxShadow:'0 4px 12px rgba(0,0,0,0.2)'}}>
+      CHAT FISCAL
+    </button>
+  );
+
+  return (
+    <div style={{position:'fixed', bottom:'20px', right:'20px', width:'320px', height:'450px', backgroundColor:'white', borderRadius:'15px', border:'1px solid #e2e8f0', display:'flex', flexDirection:'column', zIndex:9999, boxShadow:'0 10px 25px rgba(0,0,0,0.2)', overflow:'hidden', fontFamily:'sans-serif'}}>
+      <div style={{backgroundColor:'#2563eb', color:'white', padding:'15px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+        <span style={{fontWeight:'bold'}}>Asistent eCalc</span>
+        <button onClick={() => setIsOpen(false)} style={{background:'none', border:'none', color:'white', fontWeight:'bold', cursor:'pointer'}}>X</button>
+      </div>
+      <div style={{flex:1, overflowY:'auto', padding:'15px', backgroundColor:'#f8fafc', display:'flex', flexDirection:'column', gap:'10px'}}>
+        {messages.map((m, i) => (
+          <div key={i} style={{alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', backgroundColor: m.role === 'user' ? '#2563eb' : 'white', color: m.role === 'user' ? 'white' : '#1e293b', padding:'10px', borderRadius:'10px', maxWidth:'80%', fontSize:'14px', border: m.role === 'user' ? 'none' : '1px solid #e2e8f0'}}>
+            {m.content}
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleSubmit} style={{padding:'10px', borderTop:'1px solid #e2e8f0', display:'flex', gap:'5px'}}>
+        <input style={{flex:1, padding:'8px', borderRadius:'5px', border:'1px solid #cbd5e1', outline:'none'}} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Scrie..." />
+        <button type="submit" style={{backgroundColor:'#2563eb', color:'white', border:'none', padding:'8px 15px', borderRadius:'5px', cursor:'pointer'}}>OK</button>
+      </form>
+    </div>
+  );
+}
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ro">
-      <head>
-        {/* Adăugat strict pentru scor 100 Best Practices conform PDF */}
-<meta
-  httpEquiv="Content-Security-Policy"
-  content="upgrade-insecure-requests; block-all-mixed-content; connect-src 'self' https://ecalc.artgrup.workers.dev https://api.groq.com https://open-meteo.com https://www.bnr.ro;"
-/>
-      </head>
       <body className={`${inter.className} antialiased bg-slate-50 flex flex-col min-h-screen text-slate-900`}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'SoftwareApplication',
-              name: 'eCalc RO',
-              applicationCategory: 'FinanceApplication',
-              offers: {
-                '@type': 'Offer',
-                price: '0',
-                priceCurrency: 'RON',
-              },
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: '4.8',
-                ratingCount: '1250',
-              },
-            }),
-          }}
-        />
         <NavigationHeader />
         <main className="flex-grow">
           {children}
         </main>
-        <ChatFloat />
+        <ChatFaraImport />
         <Footer />
         <Toaster />
       </body>
