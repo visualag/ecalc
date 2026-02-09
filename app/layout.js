@@ -31,10 +31,10 @@ export default function RootLayout({ children }) {
     <html lang="ro">
       <head>
         {/* Adăugat strict pentru scor 100 Best Practices conform PDF */}
-        <meta
-          httpEquiv="Content-Security-Policy"
-          content="upgrade-insecure-requests; block-all-mixed-content"
-        />
+<meta
+  httpEquiv="Content-Security-Policy"
+  content="upgrade-insecure-requests; block-all-mixed-content; connect-src 'self' https://ecalc.artgrup.workers.dev https://api.groq.com https://open-meteo.com https://www.bnr.ro;"
+/>
       </head>
       <body className={`${inter.className} antialiased bg-slate-50 flex flex-col min-h-screen text-slate-900`}>
         <script
