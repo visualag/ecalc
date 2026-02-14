@@ -95,13 +95,12 @@ export default async function CountyPage({ params }) {
                     )}
                 </div>
 
-                    {citiesInCounty.length === 0 && (
-                        <div className="text-center py-12">
-                            <Search className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                            <p className="text-slate-500 font-bold">Folosiți căutarea pentru a găsi localitatea dorită.</p>
-                        </div>
-                    )}
-                </section>
+                {citiesInCounty.length === 0 && (
+                    <div className="text-center py-12">
+                        <Search className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+                        <p className="text-slate-500 font-bold">Folosiți căutarea pentru a găsi localitatea dorită.</p>
+                    </div>
+                )}
 
                 <div className="mt-8 bg-blue-600 p-8 rounded-[6px] text-white shadow-xl relative overflow-hidden">
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
