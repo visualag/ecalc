@@ -172,12 +172,12 @@ export default function WeatherView({ weather, nearbyPlaces, ORASE_PRINCIPALE, M
 
           {/* Right: Hourly Forecast */}
           <div className="lg:col-span-4">
-            <section className="bg-white p-6 rounded-[6px] border border-slate-100 shadow-sm h-full flex flex-col">
-              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.15em] mb-4 flex items-center gap-3">
-                <div className="p-1.5 bg-blue-50 rounded-full"><Activity className="h-4 w-4 text-blue-600" /></div>
-                EVOLUȚIE ORARĂ (URMĂTOARELE 24H)
+            <section className="bg-white p-3 rounded-[6px] border border-slate-100 shadow-sm h-full flex flex-col">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.15em] mb-2 flex items-center gap-3">
+                <div className="p-1 px-2 bg-blue-50 rounded-full"><Activity className="h-3 w-3 text-blue-600" /></div>
+                EVOLUȚIE ORARĂ
               </h2>
-              <div className="grid grid-cols-4 gap-x-2 gap-y-1.5 flex-grow content-start">
+              <div className="grid grid-cols-6 gap-x-1 gap-y-1 flex-grow content-start">
                 {weather.hourly.time.slice(0, 24).map((time, index) => {
                   const hour = new Date(time).getHours();
                   const tempValue = Math.round(weather.hourly.temperature_2m[index]);
@@ -185,12 +185,12 @@ export default function WeatherView({ weather, nearbyPlaces, ORASE_PRINCIPALE, M
                   const isCurrentHour = index === 0;
 
                   return (
-                    <div key={time} className={`flex flex-col items-center py-1.5 rounded-[4px] border ${isCurrentHour ? 'border-blue-200 bg-blue-50/30' : 'border-transparent hover:bg-slate-50'}`}>
-                      <span className="text-[8px] font-black text-slate-400 uppercase mb-1">{hour}:00</span>
-                      <div className="mb-1 transform scale-90">
+                    <div key={time} className={`flex flex-col items-center py-0.5 rounded-[4px] border ${isCurrentHour ? 'border-blue-200 bg-blue-50/30' : 'border-transparent hover:bg-slate-50'}`}>
+                      <span className="text-[8px] font-black text-slate-400 uppercase mb-0.5">{hour}:00</span>
+                      <div className="mb-0.5 transform scale-[0.75]">
                         {getWeatherIcon(weather.hourly.weather_code[index], isNight)}
                       </div>
-                      <span className="text-[14px] font-extrabold text-slate-900">{tempValue}°</span>
+                      <span className="text-[12px] font-extrabold text-slate-900">{tempValue}°</span>
                     </div>
                   );
                 })}
